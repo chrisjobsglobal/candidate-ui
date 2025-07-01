@@ -1,51 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary-50: #fef2f2;
-  --color-primary-100: #fee2e2;
-  --color-primary-200: #fecaca;
-  --color-primary-300: #fca5a5;
-  --color-primary-400: #f87171;
-  --color-primary-500: #ef4444;
-  --color-primary-600: #dc2626;
-  --color-primary-700: #b91c1c;
-  --color-primary-800: #991b1b;
-  --color-primary-900: #990000;
-  --color-primary-950: #450a0a;
+  --color-primary-50: #fee8eb; /* Calculated based on new primary 900 */
+  --color-primary-100: #fbd6da;
+  --color-primary-200: #f8c0c6;
+  --color-primary-300: #f5a9b1;
+  --color-primary-400: #f2939c;
+  --color-primary-500: #ef7d87;
+  --color-primary-600: #ec6773;
+  --color-primary-700: #e9515e;
+  --color-primary-800: #e53b4a;
+  --color-primary-900: #990000; /* Your existing primary */
+  --color-primary-950: #800000; /* Darker variant for deeper red feel */
   
-  --color-gradient-start: #800000;
-  --color-gradient-end: #A61A1A;
+  --color-gradient-start: #990000;
+  --color-gradient-end: #B22222;
   
-  --color-background-main: #F5F5F5;
-  --color-background-subtle: #D3CCC6;
+  --color-background-main: #EEF2F6;
+  --color-background-subtle: #DCE4ED;
   
-  --color-text-primary: #333333;
-  --color-text-secondary: #666666;
-  --color-text-muted: #999999;
+  --color-text-primary: #2C3E50;
+  --color-text-secondary: #475C7A; /* Darker variant of main text for secondary info */
+  --color-text-muted: #7E94AD; /* Lighter variant for muted text */
   
-  --color-accent-purple: #C8A2C8;
+  --color-accent-blue: #7CA9B7;
   
   --color-white: #ffffff;
   --color-black: #000000;
   --color-transparent: transparent;
   --color-current: currentColor;
   
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f3f4f6;
-  --color-gray-200: #e5e7eb;
-  --color-gray-300: #d1d5db;
-  --color-gray-400: #9ca3af;
-  --color-gray-500: #6b7280;
-  --color-gray-600: #4b5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
+  --color-gray-50: #EEF2F6; /* Adjusted to new main background */
+  --color-gray-100: #DCE4ED; /* Adjusted to new subtle background */
+  --color-gray-200: #C9D6E1; /* Interpolated */
+  --color-gray-300: #B7C8D5; /* Interpolated */
+  --color-gray-400: #A4BBD0; /* Interpolated */
+  --color-gray-500: #92B0C4; /* Interpolated */
+  --color-gray-600: #80A3BB; /* Interpolated */
+  --color-gray-700: #6D97B0; /* Interpolated */
+  --color-gray-800: #5B8AA4; /* Interpolated */
+  --color-gray-900: #487D99; /* Interpolated */
   
-  --color-red-50: #fef2f2;
-  --color-red-100: #fee2e2;
-  --color-red-500: #ef4444;
-  --color-red-600: #dc2626;
-  --color-red-800: #991b1b;
+  --color-red-50: #fee8eb; /* Based on new primary-900 */
+  --color-red-100: #fbd6da;
+  --color-red-500: #ef7d87;
+  --color-red-600: #ec6773;
+  --color-red-800: #e53b4a;
   
   --color-green-50: #f0fdf4;
   --color-green-500: #22c55e;
@@ -61,8 +61,8 @@
   
   --font-family-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   
-  --shadow-elegant: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-elegant-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-elegant: 0 4px 6px -1px rgba(44, 62, 80, 0.1), 0 2px 4px -1px rgba(44, 62, 80, 0.06); /* Using new text-dark for shadow color */
+  --shadow-elegant-lg: 0 10px 15px -3px rgba(44, 62, 80, 0.1), 0 4px 6px -2px rgba(44, 62, 80, 0.05); /* Using new text-dark for shadow color */
   
   --animate-fade-in: fadeIn 0.5s ease-in-out;
   --animate-slide-in: slideIn 0.3s ease-out;
@@ -93,8 +93,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background-color: var(--main-background);
-  color: var(--dark-contrast);
+  background-color: var(--color-background-main); /* Changed to use new variable name */
+  color: var(--color-text-primary); /* Changed to use new variable name */
   line-height: 1.6;
 }
 
@@ -109,14 +109,14 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--main-background);
+  background: var(--color-background-main); /* Changed to use new variable name */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--subtle-accent);
+  background: var(--color-background-subtle); /* Changed to use new variable name */
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary-accent);
+  background: var(--color-primary-900); /* Changed to use new variable name */
 }

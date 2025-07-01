@@ -34,12 +34,7 @@ import {
         
         <!-- Logo -->
         <div class="flex items-center justify-between h-16 px-6 border-b border-background-subtle">
-          <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 bg-gradient-to-r from-gradient-start to-gradient-end rounded-lg flex items-center justify-center">
-              <span class="text-white font-bold text-sm">C</span>
-            </div>
-            <span class="text-xl font-bold text-text-primary">CareerHub</span>
-          </div>
+          <div class="h-[50px] w-full" style="background: url(/logo_red.png); background-size: contain; background-repeat:no-repeat; background-position: center"></div>
           <button 
             (click)="toggleMobileMenu()"
             class="lg:hidden p-2 text-text-secondary hover:text-text-primary transition-colors"
@@ -107,7 +102,7 @@ import {
                 <lucide-angular 
                   [img]="SearchIcon" 
                   size="20" 
-                  class="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"
+                  class="absolute left-3 top-1/2 transform -translate-y-1/2 -translate-x-1 text-text-secondary"
                 ></lucide-angular>
                 <input 
                   type="text" 

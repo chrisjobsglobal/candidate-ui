@@ -20,7 +20,8 @@ import {
   Download,
   Share2,
   Eye,
-  Users
+  Users,
+  Funnel
 } from 'lucide-angular';
 
 interface Experience {
@@ -79,30 +80,38 @@ interface Skill {
             </div>
             <div class="flex-1 pb-4">
               <div class="flex items-start justify-between">
-                <div>
-                  <h1 class="text-3xl font-bold text-text-primary">John Doe</h1>
-                  <p class="text-xl text-text-secondary font-medium">Senior Software Engineer</p>
-                  <div class="flex items-center space-x-4 mt-2 text-text-secondary">
+                <div class="-translate-y-5">
+                  <h1 class="text-3xl font-bold text-white">John Doe</h1>
+                  <p class="text-xl text-gray-100 font-medium">Senior Software Engineer</p>
+                  <div class="flex items-center space-x-4 mt-2 pt-2 text-text-secondary">
                     <div class="flex items-center space-x-1">
-                      <lucide-angular [img]="MapPinIcon" size="16"></lucide-angular>
+                      <lucide-angular [img]="MapPinIcon" size="16" class="text-green-500"></lucide-angular>
                       <span>San Francisco, CA</span>
                     </div>
                     <div class="flex items-center space-x-1">
-                      <lucide-angular [img]="UsersIcon" size="16"></lucide-angular>
+                      <lucide-angular [img]="UsersIcon" size="16" class="text-blue-500"></lucide-angular>
                       <span>{{ profileStats().connections }} connections</span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <lucide-angular [img]="BriefcaseIcon" size="16" class="text-amber-500"></lucide-angular>
+                      <span>4 active applications</span>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                      <lucide-angular [img]="FunnelIcon" size="16" class="text-blue-500"></lucide-angular>
+                      <span>1 shortlisted</span>
                     </div>
                   </div>
                 </div>
                 <div class="flex items-center space-x-3">
-                  <button class="flex items-center space-x-2 px-4 py-2 border border-background-subtle text-text-secondary hover:bg-gray-50 rounded-lg transition-colors">
+                  <button class="flex items-center space-x-2 px-4 py-2 border border-background-subtle text-gray-100 hover:bg-primary-800  rounded-lg transition-colors">
                     <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
                     <span>{{ profileStats().views }}</span>
                   </button>
-                  <button class="flex items-center space-x-2 px-4 py-2 border border-background-subtle text-text-secondary hover:bg-gray-50 rounded-lg transition-colors">
+                  <button class="flex items-center space-x-2 px-4 py-2 border border-background-subtle text-gray-100 hover:bg-primary-800  rounded-lg transition-colors">
                     <lucide-angular [img]="Share2Icon" size="16"></lucide-angular>
                     <span>Share</span>
                   </button>
-                  <button class="px-6 py-2 bg-primary-900 text-white rounded-lg hover:bg-primary-800 transition-colors font-medium">
+                  <button class="px-6 py-2 bg-primary-900 text-white border border-background-subtle rounded-lg hover:bg-primary-800 transition-colors font-medium">
                     Edit Profile
                   </button>
                 </div>
@@ -321,6 +330,8 @@ export class ProfileComponent {
   readonly Share2Icon = Share2;
   readonly EyeIcon = Eye;
   readonly UsersIcon = Users;
+  readonly FunnelIcon = Funnel;
+
 
   profileStats = signal({
     views: 142,
