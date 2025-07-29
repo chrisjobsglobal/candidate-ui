@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
@@ -17,26 +17,8 @@ import {
   Star,
   ChevronDown
 } from 'lucide-angular';
-
-interface JobListing {
-  id: string;
-  title: string;
-  company: string;
-  companyLogo?: string;
-  location: string;
-  type: 'full-time' | 'part-time' | 'contract' | 'internship' | 'remote';
-  salary: string;
-  experience: string;
-  postedTime: string;
-  applicants: number;
-  description: string;
-  requirements: string[];
-  tags: string[];
-  isBookmarked: boolean;
-  matchPercentage: number;
-  isUrgent: boolean;
-  companyRating: number;
-}
+import { JobStore } from './jobs/job.store';
+import { JobListing } from './jobs/services/job.service';
 
 @Component({
   selector: 'app-jobs',
@@ -65,6 +47,7 @@ interface JobListing {
                 type="text" 
                 placeholder="Search job titles, companies, or keywords..."
                 [(ngModel)]="searchQuery"
+                (ngModelChange)="onSearchChange()"
                 class="w-full pl-10 pr-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-primary-900 focus:border-transparent outline-none transition-all"
               >
             </div>
@@ -74,6 +57,7 @@ interface JobListing {
           <div class="relative">
             <select 
               [(ngModel)]="selectedLocation"
+              (ngModelChange)="onLocationChange()"
               class="w-full appearance-none px-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-primary-900 focus:border-transparent outline-none transition-all bg-white"
             >
               <option value="">All Locations</option>
@@ -94,6 +78,7 @@ interface JobListing {
           <div class="relative">
             <select 
               [(ngModel)]="selectedJobType"
+              (ngModelChange)="onJobTypeChange()"
               class="w-full appearance-none px-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-primary-900 focus:border-transparent outline-none transition-all bg-white"
             >
               <option value="">All Types</option>
@@ -131,12 +116,23 @@ interface JobListing {
       <!-- Results Header -->
       <div class="flex items-center justify-between mb-6">
         <div class="text-text-secondary">
-          Showing {{ filteredJobs().length }} of {{ jobs().length }} jobs
+          Showing {{ filteredJobs().length }} of {{ jobStore.items().length }} jobs
+          <span *ngIf="jobStore.loading().list" class="ml-2 text-primary-900">
+            (Loading...)
+          </span>
         </div>
         <div class="flex items-center space-x-4">
+          <button
+            (click)="refreshJobs()"
+            [disabled]="jobStore.isLoading()"
+            class="px-3 py-2 text-sm bg-primary-900 text-white rounded-lg hover:bg-primary-800 disabled:opacity-50 transition-colors"
+          >
+            {{ jobStore.isLoading() ? 'Refreshing...' : 'Refresh' }}
+          </button>
           <span class="text-sm text-text-secondary">Sort by:</span>
           <select 
             [(ngModel)]="sortBy"
+            (ngModelChange)="onSortChange()"
             class="border border-background-subtle rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-900 focus:border-transparent outline-none"
           >
             <option value="relevance">Relevance</option>
@@ -147,10 +143,52 @@ interface JobListing {
         </div>
       </div>
 
+      <!-- Error State -->
+      <div *ngIf="jobStore.hasError()" class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div class="flex items-center justify-between">
+          <div class="text-red-800">
+            <strong>Error:</strong> {{ jobStore.error() }}
+          </div>
+          <button
+            (click)="jobStore.clearError()"
+            class="text-red-600 hover:text-red-800 font-semibold"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div 
+        *ngIf="jobStore.loading().list && jobStore.isEmpty()" 
+        class="text-center py-12"
+      >
+        <div class="animate-spin w-8 h-8 border-4 border-primary-900 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <p class="text-text-secondary">Loading jobs...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div 
+        *ngIf="jobStore.isEmpty() && !jobStore.loading().list" 
+        class="text-center py-12"
+      >
+        <p class="text-text-secondary text-lg mb-2">No jobs found</p>
+        <p class="text-text-secondary">Try adjusting your search criteria or filters</p>
+        <button
+          (click)="loadJobs()"
+          class="mt-4 px-6 py-3 bg-primary-900 text-white rounded-lg hover:bg-primary-800 transition-colors"
+        >
+          Load Jobs
+        </button>
+      </div>
+
       <!-- Job Listings -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" *ngIf="jobStore.hasItems()">
         <div 
           *ngFor="let job of filteredJobs()" 
+          (click)="selectJob(job)"
+          [class.ring-2]="job === jobStore.currentItem()"
+          [class.ring-primary-900]="job === jobStore.currentItem()"
           class="bg-white rounded-xl p-6 shadow-elegant hover:shadow-elegant-lg transition-all duration-300 cursor-pointer border border-transparent hover:border-primary-900/20"
         >
           <!-- Job Header -->
@@ -262,14 +300,18 @@ interface JobListing {
 
       <!-- Load More -->
       <div class="mt-12 text-center">
-        <button class="px-8 py-3 bg-white border border-background-subtle text-text-primary rounded-lg hover:bg-gray-50 transition-colors font-medium">
-          Load More Jobs
+        <button 
+          (click)="loadMoreJobs()"
+          [disabled]="jobStore.loading().list || !jobStore.canLoadMore()"
+          class="px-8 py-3 bg-white border border-background-subtle text-text-primary rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ jobStore.loading().list ? 'Loading...' : 'Load More Jobs' }}
         </button>
       </div>
     </div>
   `
 })
-export class JobsComponent {
+export class JobsComponent implements OnInit, OnDestroy {
   readonly SearchIcon = Search;
   readonly FilterIcon = Filter;
   readonly MapPinIcon = MapPin;
@@ -298,121 +340,97 @@ export class JobsComponent {
     { id: 'benefits', label: 'Great Benefits', active: false }
   ]);
 
-  jobs = signal<JobListing[]>([
-    {
-      id: '1',
-      title: 'Senior Frontend Developer',
-      company: 'TechCorp Inc.',
-      location: 'San Francisco, CA',
-      type: 'full-time',
-      salary: '$120,000 - $150,000',
-      experience: '5+ years',
-      postedTime: '2 days ago',
-      applicants: 45,
-      description: 'We are looking for a passionate Senior Frontend Developer to join our growing team. You will be responsible for building user-facing features using cutting-edge technologies including Angular, React, and modern JavaScript frameworks.',
-      requirements: ['5+ years frontend experience', 'Expert in Angular/React', 'TypeScript proficiency'],
-      tags: ['Angular', 'TypeScript', 'JavaScript', 'CSS', 'HTML', 'REST APIs', 'Git'],
-      isBookmarked: false,
-      matchPercentage: 92,
-      isUrgent: false,
-      companyRating: 4.5
-    },
-    {
-      id: '2',
-      title: 'Full Stack Engineer',
-      company: 'StartupXYZ',
-      location: 'Remote',
-      type: 'full-time',
-      salary: '$110,000 - $140,000',
-      experience: '3+ years',
-      postedTime: '1 day ago',
-      applicants: 23,
-      description: 'Join our innovative startup as a Full Stack Engineer. Work on exciting projects that impact millions of users. We offer flexible work arrangements and competitive compensation.',
-      requirements: ['3+ years full-stack experience', 'Node.js & React', 'Database design'],
-      tags: ['React', 'Node.js', 'MongoDB', 'AWS', 'Docker', 'GraphQL'],
-      isBookmarked: true,
-      matchPercentage: 88,
-      isUrgent: true,
-      companyRating: 4.2
-    },
-    {
-      id: '3',
-      title: 'JavaScript Developer',
-      company: 'InnovateNow',
-      location: 'New York, NY',
-      type: 'contract',
-      salary: '$80 - $100/hour',
-      experience: '2+ years',
-      postedTime: '3 hours ago',
-      applicants: 12,
-      description: 'Contract opportunity for an experienced JavaScript Developer. Work on cutting-edge web applications with modern frameworks and tools.',
-      requirements: ['2+ years JavaScript', 'Modern frameworks', 'API integration'],
-      tags: ['JavaScript', 'Vue.js', 'Express', 'MongoDB', 'REST', 'Agile'],
-      isBookmarked: false,
-      matchPercentage: 85,
-      isUrgent: false,
-      companyRating: 4.0
-    },
-    {
-      id: '4',
-      title: 'Senior Software Engineer',
-      company: 'Google',
-      location: 'Mountain View, CA',
-      type: 'full-time',
-      salary: '$180,000 - $220,000',
-      experience: '7+ years',
-      postedTime: '1 week ago',
-      applicants: 156,
-      description: 'Google is seeking a Senior Software Engineer to work on large-scale distributed systems. Join our team and help build products that impact billions of users worldwide.',
-      requirements: ['7+ years software engineering', 'Distributed systems', 'Computer Science degree'],
-      tags: ['Java', 'Python', 'Distributed Systems', 'Machine Learning', 'Cloud'],
-      isBookmarked: true,
-      matchPercentage: 95,
-      isUrgent: false,
-      companyRating: 4.8
-    },
-    {
-      id: '5',
-      title: 'Frontend Developer',
-      company: 'Microsoft',
-      location: 'Seattle, WA',
-      type: 'full-time',
-      salary: '$130,000 - $160,000',
-      experience: '4+ years',
-      postedTime: '4 days ago',
-      applicants: 89,
-      description: 'Microsoft is looking for a Frontend Developer to work on Azure portal and Office 365 applications. Experience with React and TypeScript is required.',
-      requirements: ['4+ years frontend', 'React & TypeScript', 'Cloud platforms'],
-      tags: ['React', 'TypeScript', 'Azure', 'Office 365', 'C#', '.NET'],
-      isBookmarked: false,
-      matchPercentage: 90,
-      isUrgent: false,
-      companyRating: 4.6
-    },
-    {
-      id: '6',
-      title: 'Junior Web Developer',
-      company: 'WebStudio',
-      location: 'Remote',
-      type: 'full-time',
-      salary: '$60,000 - $80,000',
-      experience: '0-2 years',
-      postedTime: '6 hours ago',
-      applicants: 78,
-      description: 'Perfect opportunity for a Junior Web Developer to start their career. We provide mentorship and training in modern web technologies.',
-      requirements: ['Basic web development', 'HTML/CSS/JS', 'Learning mindset'],
-      tags: ['HTML', 'CSS', 'JavaScript', 'PHP', 'WordPress', 'MySQL'],
-      isBookmarked: false,
-      matchPercentage: 75,
-      isUrgent: true,
-      companyRating: 3.8
+  // Computed signal for filtered jobs using the store
+  filteredJobs = computed(() => {
+    const items = this.jobStore.items();
+    const searchQuery = this.searchQuery();
+    const selectedLocation = this.selectedLocation();
+    const selectedJobType = this.selectedJobType();
+
+    // Client-side filtering for immediate UI response
+    // The store handles server-side filtering for data fetching
+    let filtered = items;
+
+    if (searchQuery) {
+      const search = searchQuery.toLowerCase();
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(search) ||
+        job.company.toLowerCase().includes(search) ||
+        job.description.toLowerCase().includes(search)
+      );
     }
-  ]);
 
-  filteredJobs = signal<JobListing[]>([]);
+    if (selectedLocation && selectedLocation !== '') {
+      filtered = filtered.filter(job => 
+        job.location.toLowerCase().includes(selectedLocation.toLowerCase())
+      );
+    }
 
-  constructor() {
-    this.filteredJobs.set(this.jobs());
+    if (selectedJobType && selectedJobType !== '') {
+      filtered = filtered.filter(job => job.type === selectedJobType);
+    }
+
+    return filtered;
+  });
+
+  constructor(public jobStore: JobStore) {}
+
+  ngOnInit() {
+    // Load initial jobs data
+    this.loadJobs();
+  }
+
+  ngOnDestroy() {
+    // Cleanup any subscriptions
+    this.jobStore.disableAutoRefresh();
+  }
+
+  loadJobs() {
+    this.jobStore.initializeJobs().subscribe({
+      next: (response) => {
+        console.log(`Loaded ${response.items.length} jobs`);
+      },
+      error: (error) => {
+        console.error('Failed to load jobs:', error);
+      }
+    });
+  }
+
+  // Search and filter methods
+  onSearchChange() {
+    const searchQuery = this.searchQuery();
+    if (searchQuery.trim()) {
+      // Trigger server-side search
+      this.jobStore.searchJobs(searchQuery).subscribe();
+    } else {
+      // Reset to show all jobs
+      this.jobStore.clearFilter().subscribe();
+    }
+  }
+
+  onLocationChange() {
+    const location = this.selectedLocation();
+    if (location) {
+      this.jobStore.filterByLocation(location).subscribe();
+    } else {
+      this.loadJobs();
+    }
+  }
+
+  onJobTypeChange() {
+    const jobType = this.selectedJobType();
+    if (jobType) {
+      this.jobStore.filterByType(jobType as any).subscribe();
+    } else {
+      this.loadJobs();
+    }
+  }
+
+  onSortChange() {
+    const sortBy = this.sortBy();
+    if (sortBy) {
+      this.jobStore.sortBy(sortBy as any).subscribe();
+    }
   }
 
   toggleFilter(filter: any) {
@@ -421,16 +439,51 @@ export class JobsComponent {
     if (index !== -1) {
       filters[index].active = !filters[index].active;
       this.quickFilters.set([...filters]);
+      
+      // Apply quick filters to store
+      const activeFilters = filters.reduce((acc, f) => {
+        acc[f.id] = f.active;
+        return acc;
+      }, {} as { [key: string]: boolean });
+      
+      this.jobStore.applyQuickFilters(activeFilters).subscribe();
     }
   }
 
   toggleBookmark(job: JobListing) {
-    const jobs = this.jobs();
-    const index = jobs.findIndex(j => j.id === job.id);
-    if (index !== -1) {
-      jobs[index].isBookmarked = !jobs[index].isBookmarked;
-      this.jobs.set([...jobs]);
-      this.filteredJobs.set([...jobs]);
-    }
+    this.jobStore.toggleBookmark(job.id).subscribe({
+      next: (updatedJob) => {
+        console.log(`Bookmark toggled for ${updatedJob.title}`);
+      },
+      error: (error) => {
+        console.error('Failed to toggle bookmark:', error);
+      }
+    });
+  }
+
+  selectJob(job: JobListing) {
+    this.jobStore.setCurrentItem(job);
+  }
+
+  loadMoreJobs() {
+    this.jobStore.loadMore().subscribe({
+      next: (response) => {
+        console.log(`Loaded ${response.items.length} more jobs`);
+      },
+      error: (error) => {
+        console.error('Failed to load more jobs:', error);
+      }
+    });
+  }
+
+  refreshJobs() {
+    this.jobStore.refresh().subscribe({
+      next: (response) => {
+        console.log(`Refreshed ${response.items.length} jobs`);
+      },
+      error: (error) => {
+        console.error('Failed to refresh jobs:', error);
+      }
+    });
   }
 }
