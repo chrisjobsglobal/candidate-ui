@@ -1,7 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, finalize } from 'rxjs';
-import { BaseStore, CrudOperations } from '../../core/store/base-store';
-import { BaseFilter } from '../../core/store/base-state';
+import { BaseStore } from '../../core/store/base-store';
 import { JobListing, JobFilter, CreateJobDto, UpdateJobDto, JobService } from './services/job.service';
 
 /**
@@ -15,14 +15,16 @@ export class JobStore extends BaseStore<JobListing, CreateJobDto, UpdateJobDto, 
   private jobService = inject(JobService);
   
   constructor() {
-    super({
+    const http = inject(HttpClient);
+    super(http, 'http://localhost:8000/jobs', {
       enableOptimisticUpdates: true,
-      enableCaching: true,
+      enableCaching: false,
       cacheTimeout: 300000 // 5 minutes
     });
   }
 
-  protected getService(): CrudOperations<JobListing, CreateJobDto, UpdateJobDto, JobFilter> {
+  protected getService(): JobService {
+    // This method is now deprecated but kept for backward compatibility
     return this.jobService;
   }
 

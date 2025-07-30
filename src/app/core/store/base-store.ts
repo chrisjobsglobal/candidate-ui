@@ -1,9 +1,22 @@
 import { Injectable } from '@angular/core';
-import { Observable, catchError, finalize, tap, of } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable, catchError, finalize, tap, of, map } from 'rxjs';
 import { BaseStateClass, BaseFilter, Pagination } from './base-state';
 
 /**
- * Base CRUD operations interface
+ * FastAPI standardized list response format
+ */
+export interface FastAPIListResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+/**
+ * Base CRUD operations interface (deprecated - HTTP operations now handled internally)
+ * @deprecated Use BaseStore with HTTP operations instead
  */
 export interface CrudOperations<T, CreateDto = Partial<T>, UpdateDto = Partial<T>, F extends BaseFilter = BaseFilter> {
   getAll(filter?: Partial<F>, pagination?: Partial<Pagination>): Observable<{ items: T[]; pagination: Pagination }>;
@@ -22,7 +35,10 @@ export interface StoreConfig {
   enableOptimisticUpdates?: boolean;
   enableCaching?: boolean;
   cacheTimeout?: number;
-
+  paginationParams?: {
+    page?: string;
+    limit?: string;
+  };
 }
 
 /**
@@ -34,10 +50,14 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   enableOptimisticUpdates: true,
   enableCaching: false,
   cacheTimeout: 300000, // 5 minutes
+  paginationParams: {
+    page: 'page',
+    limit: 'per_page'
+  }
 };
 
 /**
- * Abstract base store class with signal-based state management and CRUD operations
+ * Abstract base store class with signal-based state management and built-in HTTP CRUD operations
  */
 @Injectable()
 export abstract class BaseStore<
@@ -48,16 +68,25 @@ export abstract class BaseStore<
 > extends BaseStateClass<T, F> {
   
   protected readonly config: StoreConfig;
+  protected readonly http: HttpClient;
+  protected readonly baseUrl: string;
   private autoRefreshInterval?: number;
   private cacheTimestamp?: Date;
 
-  constructor(config: Partial<StoreConfig> = {}) {
+  constructor(
+    http: HttpClient,
+    baseUrl: string,
+    config: Partial<StoreConfig> = {}
+  ) {
     super();
+    this.http = http;
+    this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
     this.config = { ...DEFAULT_STORE_CONFIG, ...config };
   }
 
   /**
    * Abstract method to get the service for CRUD operations
+   * @deprecated HTTP operations are now handled internally
    */
   protected abstract getService(): CrudOperations<T, CreateDto, UpdateDto, F>;
 
@@ -65,6 +94,91 @@ export abstract class BaseStore<
    * Abstract method to extract ID from an item
    */
   protected abstract getItemId(item: T): string | number;
+
+  /**
+   * Build HTTP parameters from filter and pagination
+   */
+  protected buildHttpParams(filter?: Partial<F>, pagination?: Partial<Pagination>): HttpParams {
+    let params = new HttpParams();
+
+    // Add filter parameters
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          if (Array.isArray(value)) {
+            value.forEach(v => params = params.append(key, v.toString()));
+          } else {
+            params = params.set(key, value.toString());
+          }
+        }
+      });
+    }
+
+    // Add pagination parameters
+    if (pagination) {
+      const pageParam = this.config.paginationParams?.page || 'page';
+      const limitParam = this.config.paginationParams?.limit || 'per_page';
+      
+      if (pagination.page) params = params.set(pageParam, pagination.page.toString());
+      if (pagination.limit) params = params.set(limitParam, pagination.limit.toString());
+    }
+
+    return params;
+  }
+
+  /**
+   * Transform FastAPI list response to internal format
+   */
+  protected transformFastAPIResponse(response: FastAPIListResponse<T>): { items: T[]; pagination: Pagination } {
+    return {
+      items: response.data,
+      pagination: {
+        page: response.page,
+        limit: response.per_page,
+        total: response.total,
+        totalPages: response.total_pages
+      }
+    };
+  }
+
+  /**
+   * HTTP GET all items
+   */
+  protected httpGetAll(filter?: Partial<F>, pagination?: Partial<Pagination>): Observable<{ items: T[]; pagination: Pagination }> {
+    const params = this.buildHttpParams(filter, pagination);
+    
+    return this.http.get<FastAPIListResponse<T>>(`${this.baseUrl}`, { params }).pipe(
+      map((response: FastAPIListResponse<T>) => this.transformFastAPIResponse(response))
+    );
+  }
+
+  /**
+   * HTTP GET single item by ID
+   */
+  protected httpGetById(id: string | number): Observable<T> {
+    return this.http.get<T>(`${this.baseUrl}/${id}`);
+  }
+
+  /**
+   * HTTP POST create new item
+   */
+  protected httpCreate(item: CreateDto): Observable<T> {
+    return this.http.post<T>(`${this.baseUrl}`, item);
+  }
+
+  /**
+   * HTTP PUT update existing item
+   */
+  protected httpUpdate(id: string | number, item: UpdateDto): Observable<T> {
+    return this.http.put<T>(`${this.baseUrl}/${id}`, item);
+  }
+
+  /**
+   * HTTP DELETE item
+   */
+  protected httpDelete(id: string | number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
 
   /**
    * Load all items with optional filtering and pagination
@@ -86,7 +200,7 @@ export abstract class BaseStore<
     const currentFilter = this.filter();
     const currentPagination = this.pagination();
 
-    return this.getService().getAll(currentFilter, currentPagination).pipe(
+    return this.httpGetAll(currentFilter, currentPagination).pipe(
       tap(response => {
         this.setItems(response.items);
         this.setPagination(response.pagination);
@@ -114,7 +228,7 @@ export abstract class BaseStore<
     const nextPage = this.pagination().page + 1;
     this.setPagination({ page: nextPage });
 
-    return this.getService().getAll(this.filter(), this.pagination()).pipe(
+    return this.httpGetAll(this.filter(), this.pagination()).pipe(
       tap(response => {
         this.addItems(response.items);
         this.setPagination(response.pagination);
@@ -137,7 +251,7 @@ export abstract class BaseStore<
     this.setLoading('detail', true);
     this.clearError();
 
-    return this.getService().getById(id).pipe(
+    return this.httpGetById(id).pipe(
       tap(item => {
         this.setCurrentItem(item);
         // Update item in list if it exists
@@ -162,7 +276,7 @@ export abstract class BaseStore<
     this.setLoading('create', true);
     this.clearError();
 
-    return this.getService().create(createDto).pipe(
+    return this.httpCreate(createDto).pipe(
       tap(newItem => {
         this.addItem(newItem);
         this.setCurrentItem(newItem);
@@ -194,7 +308,7 @@ export abstract class BaseStore<
       }
     }
 
-    return this.getService().update(id, updateDto).pipe(
+    return this.httpUpdate(id, updateDto).pipe(
       tap(updatedItem => {
         this.updateItem(updatedItem);
         // Update current item if it's the same
@@ -231,7 +345,7 @@ export abstract class BaseStore<
       this.removeItem(itemToDelete);
     }
 
-    return this.getService().delete(id).pipe(
+    return this.httpDelete(id).pipe(
       tap(() => {
         // Remove from list if not already removed optimistically
         if (!this.config.enableOptimisticUpdates && itemToDelete) {
@@ -390,12 +504,12 @@ export function createStore<T, CreateDto = Partial<T>, UpdateDto = Partial<T>, F
   config: Partial<StoreConfig> = {}
 ): typeof BaseStore<T, CreateDto, UpdateDto, F> {
   return class extends BaseStore<T, CreateDto, UpdateDto, F> {
-    constructor() {
-      super(config);
+    constructor(http: HttpClient, baseUrl: string) {
+      super(http, baseUrl, config);
     }
 
     protected getService(): CrudOperations<T, CreateDto, UpdateDto, F> {
-      throw new Error('getService method must be implemented');
+      throw new Error('getService method is deprecated - HTTP operations are handled internally');
     }
 
     protected getItemId(item: T): string | number {

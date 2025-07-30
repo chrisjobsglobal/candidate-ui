@@ -60,7 +60,7 @@ import {
                 <span class="font-medium">{{ item.label }}</span>
                 <span 
                   *ngIf="item.badge" 
-                  class="ml-auto bg-primary-900 text-white text-xs px-2 py-1 rounded-full"
+                  class="ml-auto bg-primary-900 text-white text-xs px-2 py-1 rounded-full w-5 h-5 flex items-center justify-center"
                 >
                   {{ item.badge }}
                 </span>

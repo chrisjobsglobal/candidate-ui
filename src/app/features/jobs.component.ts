@@ -1,12 +1,11 @@
 import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { 
+import {
   LucideAngularModule,
   Search,
-  Filter,
   MapPin,
-  DollarSign,
+  Banknote,
   Clock,
   Users,
   Bookmark,
@@ -15,7 +14,8 @@ import {
   Building2,
   Calendar,
   Star,
-  ChevronDown
+  ChevronDown,
+  Link,
 } from 'lucide-angular';
 import { JobStore } from './jobs/job.store';
 import { JobListing } from './jobs/services/job.service';
@@ -28,8 +28,12 @@ import { JobListing } from './jobs/services/job.service';
     <div class="max-w-7xl mx-auto">
       <!-- Header -->
       <div class="mb-8">
-        <h1 class="text-3xl font-bold text-text-primary mb-2">Find Your Dream Job</h1>
-        <p class="text-text-secondary">Discover opportunities that match your skills and preferences</p>
+        <h1 class="text-3xl font-bold text-text-primary mb-2">
+          Find Your Dream Job
+        </h1>
+        <p class="text-text-secondary">
+          Discover opportunities that match your skills and preferences
+        </p>
       </div>
 
       <!-- Search and Filters -->
@@ -38,24 +42,24 @@ import { JobListing } from './jobs/services/job.service';
           <!-- Search -->
           <div class="lg:col-span-2">
             <div class="relative">
-              <lucide-angular 
-                [img]="SearchIcon" 
-                size="20" 
-                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"
+              <lucide-angular
+                [img]="SearchIcon"
+                size="20"
+                class="absolute left-2 top-1/2 transform -translate-y-1/2 text-text-secondary"
               ></lucide-angular>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search job titles, companies, or keywords..."
                 [(ngModel)]="searchQuery"
                 (ngModelChange)="onSearchChange()"
-                class="w-full pl-10 pr-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 outline-none transition-all"
-              >
+                class="w-full ps-12 pr-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 outline-none transition-all"
+              />
             </div>
           </div>
 
           <!-- Location -->
           <div class="relative">
-            <select 
+            <select
               [(ngModel)]="selectedLocation"
               (ngModelChange)="onLocationChange()"
               class="w-full appearance-none px-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-slate-500/50 focus:border-slate-300 outline-none transition-all bg-white"
@@ -67,16 +71,16 @@ import { JobListing } from './jobs/services/job.service';
               <option value="london">London, UK</option>
               <option value="toronto">Toronto, ON</option>
             </select>
-            <lucide-angular 
-              [img]="ChevronDownIcon" 
-              size="16" 
+            <lucide-angular
+              [img]="ChevronDownIcon"
+              size="16"
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary pointer-events-none"
             ></lucide-angular>
           </div>
 
           <!-- Job Type -->
           <div class="relative">
-            <select 
+            <select
               [(ngModel)]="selectedJobType"
               (ngModelChange)="onJobTypeChange()"
               class="w-full appearance-none px-4 py-3 border border-background-subtle rounded-lg focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-300 outline-none transition-all bg-white"
@@ -87,9 +91,9 @@ import { JobListing } from './jobs/services/job.service';
               <option value="contract">Contract</option>
               <option value="internship">Internship</option>
             </select>
-            <lucide-angular 
-              [img]="ChevronDownIcon" 
-              size="16" 
+            <lucide-angular
+              [img]="ChevronDownIcon"
+              size="16"
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary pointer-events-none"
             ></lucide-angular>
           </div>
@@ -98,7 +102,7 @@ import { JobListing } from './jobs/services/job.service';
         <!-- Advanced Filters -->
         <div class="mt-4 pt-4 border-t border-background-subtle">
           <div class="flex flex-wrap gap-2">
-            <button 
+            <button
               *ngFor="let filter of quickFilters()"
               [class]="getQuickFilterClass(filter)"
               class="px-4 py-2 rounded-full text-sm font-medium transition-all duration-200"
@@ -113,7 +117,8 @@ import { JobListing } from './jobs/services/job.service';
       <!-- Results Header -->
       <div class="flex items-center justify-between mb-6">
         <div class="text-text-secondary">
-          Showing {{ filteredJobs().length }} of {{ jobStore.items().length }} jobs
+          Showing {{ filteredJobs().length }} of
+          {{ jobStore.items().length }} jobs
           <span *ngIf="jobStore.loading().list" class="ml-2 text-primary-900">
             (Loading...)
           </span>
@@ -127,7 +132,7 @@ import { JobListing } from './jobs/services/job.service';
             {{ jobStore.isLoading() ? 'Refreshing...' : 'Refresh' }}
           </button>
           <span class="text-sm text-text-secondary">Sort by:</span>
-          <select 
+          <select
             [(ngModel)]="sortBy"
             (ngModelChange)="onSortChange()"
             class="border border-background-subtle rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-slate-500/50 focus:border-slate-300 outline-none"
@@ -141,7 +146,10 @@ import { JobListing } from './jobs/services/job.service';
       </div>
 
       <!-- Error State -->
-      <div *ngIf="jobStore.hasError()" class="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+      <div
+        *ngIf="jobStore.hasError()"
+        class="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-lg"
+      >
         <div class="flex items-center justify-between">
           <div class="text-orange-800">
             <strong>Error:</strong> {{ jobStore.error() }}
@@ -156,21 +164,25 @@ import { JobListing } from './jobs/services/job.service';
       </div>
 
       <!-- Loading State -->
-      <div 
-        *ngIf="jobStore.loading().list && jobStore.isEmpty()" 
+      <div
+        *ngIf="jobStore.loading().list && jobStore.isEmpty()"
         class="text-center py-12"
       >
-        <div class="animate-spin w-8 h-8 border-4 border-primary-900 border-t-transparent rounded-full mx-auto mb-4"></div>
+        <div
+          class="animate-spin w-8 h-8 border-4 border-primary-900 border-t-transparent rounded-full mx-auto mb-4"
+        ></div>
         <p class="text-text-secondary">Loading jobs...</p>
       </div>
 
       <!-- Empty State -->
-      <div 
-        *ngIf="jobStore.isEmpty() && !jobStore.loading().list" 
+      <div
+        *ngIf="jobStore.isEmpty() && !jobStore.loading().list"
         class="text-center py-12"
       >
         <p class="text-text-secondary text-lg mb-2">No jobs found</p>
-        <p class="text-text-secondary">Try adjusting your search criteria or filters</p>
+        <p class="text-text-secondary">
+          Try adjusting your search criteria or filters
+        </p>
         <button
           (click)="loadJobs()"
           class="mt-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm"
@@ -180,78 +192,127 @@ import { JobListing } from './jobs/services/job.service';
       </div>
 
       <!-- Job Listings -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6" *ngIf="jobStore.hasItems()">
-        <div 
-          *ngFor="let job of filteredJobs()" 
+      <div
+        class="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        *ngIf="jobStore.hasItems()"
+      >
+        <div
+          *ngFor="let job of filteredJobs()"
           (click)="selectJob(job)"
           [class.ring-2]="job === jobStore.currentItem()"
-          [class.ring-slate-400]="job === jobStore.currentItem()"
+          [class.ring-slate-500]="job === jobStore.currentItem()"
           [class.shadow-lg]="job === jobStore.currentItem()"
           class="bg-white rounded-xl p-6 shadow-elegant hover:shadow-elegant-lg transition-all duration-300 cursor-pointer border border-transparent hover:border-slate-200"
         >
           <!-- Job Header -->
           <div class="flex items-start justify-between mb-4">
             <div class="flex items-start space-x-4">
-              <div 
+              <div
                 class="w-12 h-12 rounded-lg flex items-center justify-center"
                 [ngClass]="getCompanyLogoClass(job.company)"
               >
-                <lucide-angular [img]="Building2Icon" size="20" class="text-white"></lucide-angular>
+                <lucide-angular
+                  [img]="Building2Icon"
+                  size="20"
+                  class="text-white"
+                ></lucide-angular>
               </div>
               <div class="flex-1">
                 <div class="flex items-center space-x-2 mb-1">
-                  <h3 class="text-lg font-semibold text-text-primary">{{ job.title }}</h3>
-                  <span *ngIf="job.isUrgent" class="px-2 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-full">
+                  <h3 class="text-lg font-semibold text-text-primary">
+                    {{ job.title }}
+                  </h3>
+                  <span
+                    *ngIf="job.isUrgent"
+                    class="px-2 py-1 bg-amber-50 text-amber-700 text-xs font-medium rounded-full"
+                  >
                     Urgent
                   </span>
                 </div>
                 <div class="flex items-center space-x-2 mb-2">
-                  <p class="text-text-secondary font-medium">{{ job.company }}</p>
-                  <div class="flex items-center space-x-1" *ngIf="job.companyRating">
-                    <lucide-angular [img]="StarIcon" size="14" class="text-yellow-500"></lucide-angular>
-                    <span class="text-sm text-text-secondary">{{ job.companyRating }}</span>
+                  <p class="text-text-secondary font-medium">
+                    {{ job.company }}
+                  </p>
+                  <div
+                    class="flex items-center space-x-1"
+                    *ngIf="job.companyRating"
+                  >
+                    <lucide-angular
+                      [img]="StarIcon"
+                      size="14"
+                      class="text-yellow-500"
+                    ></lucide-angular>
+                    <span class="text-sm text-text-secondary">{{
+                      job.companyRating
+                    }}</span>
                   </div>
                 </div>
-                <div class="flex items-center space-x-4 text-sm text-text-secondary">
+                <div
+                  class="flex items-center space-x-4 text-sm text-text-secondary"
+                >
                   <div class="flex items-center space-x-1">
-                    <lucide-angular [img]="MapPinIcon" size="14"></lucide-angular>
+                    <lucide-angular
+                      [img]="MapPinIcon"
+                      size="14"
+                    ></lucide-angular>
                     <span>{{ job.location }}</span>
                   </div>
                   <div class="flex items-center space-x-1">
-                    <lucide-angular [img]="ClockIcon" size="14"></lucide-angular>
+                    <lucide-angular
+                      [img]="ClockIcon"
+                      size="14"
+                    ></lucide-angular>
                     <span>{{ job.postedTime }}</span>
                   </div>
                 </div>
               </div>
             </div>
-            <button 
-              (click)="toggleBookmark(job)"
-              class="p-2 hover:bg-background-subtle rounded-lg transition-colors"
-            >
-              <lucide-angular 
-                [img]="job.isBookmarked ? BookmarkCheckIcon : BookmarkIcon" 
-                size="20" 
-                [class.text-primary-900]="job.isBookmarked"
-                [class.text-text-secondary]="!job.isBookmarked"
-              ></lucide-angular>
-            </button>
+
+            <div class="flex gap-1">
+              <button
+                (click)="toggleBookmark(job)"
+                class="p-2 hover:bg-background-subtle rounded-lg transition-colors"
+              >
+                <lucide-angular
+                  [img]="job.isBookmarked ? LinkIcon : LinkIcon"
+                  size="20"
+                  [class.text-primary-900]="job.isBookmarked"
+                  [class.text-text-secondary]="!job.isBookmarked"
+                ></lucide-angular>
+              </button>
+              <button
+                (click)="toggleBookmark(job)"
+                class="p-2 hover:bg-background-subtle rounded-lg transition-colors"
+              >
+                <lucide-angular
+                  [img]="job.isBookmarked ? BookmarkCheckIcon : BookmarkIcon"
+                  size="20"
+                  [class.text-primary-900]="job.isBookmarked"
+                  [class.text-text-secondary]="!job.isBookmarked"
+                ></lucide-angular>
+              </button>
+            </div>
           </div>
 
           <!-- Job Details -->
           <div class="space-y-4">
             <!-- Salary & Type -->
             <div class="flex items-center space-x-6">
-              <div class="flex items-center space-x-2 text-primary-900 font-semibold">
-                <lucide-angular [img]="DollarSignIcon" size="16"></lucide-angular>
+              <div
+                class="flex items-center space-x-2 text-primary-900 font-semibold"
+              >
+                <lucide-angular [img]="BanknoteIcon" size="16"></lucide-angular>
                 <span>{{ job.salary }}</span>
               </div>
-              <span 
+              <span
                 [ngClass]="getJobTypeClass(job.type)"
                 class="px-3 py-1 text-sm font-medium rounded-full"
               >
                 {{ job.type | titlecase }}
               </span>
-              <span class="text-sm text-text-secondary">{{ job.experience }}</span>
+              <span class="text-sm text-text-secondary">{{
+                job.experience
+              }}</span>
             </div>
 
             <!-- Description -->
@@ -261,15 +322,15 @@ import { JobListing } from './jobs/services/job.service';
 
             <!-- Tags -->
             <div class="flex flex-wrap gap-2">
-              <span 
-                *ngFor="let tag of job.tags.slice(0, 5)" 
+              <span
+                *ngFor="let tag of job.tags.slice(0, 5)"
                 [ngClass]="getTagClass(tag)"
                 class="px-2 py-1 text-xs rounded-full font-medium"
               >
                 {{ tag }}
               </span>
-              <span 
-                *ngIf="job.tags.length > 5" 
+              <span
+                *ngIf="job.tags.length > 5"
                 class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium"
               >
                 +{{ job.tags.length - 5 }} more
@@ -277,33 +338,41 @@ import { JobListing } from './jobs/services/job.service';
             </div>
 
             <!-- Match & Applicants -->
-            <div class="flex items-center justify-between pt-4 border-t border-background-subtle">
+            <div
+              class="flex items-center justify-between pt-4 border-t border-background-subtle"
+            >
               <div class="flex items-center space-x-4">
                 <div class="text-sm">
-                  <span 
+                  <span
                     [ngClass]="getMatchPercentageClass(job.matchPercentage)"
                     class="font-semibold"
                   >
                     {{ job.matchPercentage }}% match
                   </span>
                   <div class="w-20 bg-background-subtle rounded-full h-1 mt-1">
-                    <div 
+                    <div
                       [ngClass]="getMatchBarClass(job.matchPercentage)"
-                      class="h-1 rounded-full transition-all duration-300" 
+                      class="h-1 rounded-full transition-all duration-300"
                       [style.width.%]="job.matchPercentage"
                     ></div>
                   </div>
                 </div>
-                <div class="flex items-center space-x-1 text-text-secondary text-sm">
+                <div
+                  class="flex items-center space-x-1 text-text-secondary text-sm"
+                >
                   <lucide-angular [img]="UsersIcon" size="14"></lucide-angular>
                   <span>{{ job.applicants }} applicants</span>
                 </div>
               </div>
               <div class="flex items-center space-x-2">
-                <button class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
+                <button
+                  class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium"
+                >
                   View Details
                 </button>
-                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm">
+                <button
+                  class="px-4 py-2 bg-gradient-to-r from-violet-500 to-violet-600 text-white rounded-lg hover:from-violet-600 hover:to-violet-700 transition-all text-sm font-medium shadow-sm"
+                >
                   Apply Now
                 </button>
               </div>
@@ -314,7 +383,7 @@ import { JobListing } from './jobs/services/job.service';
 
       <!-- Load More -->
       <div class="mt-12 text-center">
-        <button 
+        <button
           (click)="loadMoreJobs()"
           [disabled]="jobStore.loading().list || !jobStore.canLoadMore()"
           class="px-8 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -323,18 +392,18 @@ import { JobListing } from './jobs/services/job.service';
         </button>
       </div>
     </div>
-  `
+  `,
 })
 export class JobsComponent implements OnInit, OnDestroy {
   readonly SearchIcon = Search;
-  readonly FilterIcon = Filter;
   readonly MapPinIcon = MapPin;
-  readonly DollarSignIcon = DollarSign;
+  readonly BanknoteIcon = Banknote;
   readonly ClockIcon = Clock;
   readonly UsersIcon = Users;
   readonly BookmarkIcon = Bookmark;
   readonly BookmarkCheckIcon = BookmarkCheck;
   readonly ExternalLinkIcon = ExternalLink;
+  readonly LinkIcon = Link;
   readonly Building2Icon = Building2;
   readonly CalendarIcon = Calendar;
   readonly StarIcon = Star;
@@ -351,7 +420,7 @@ export class JobsComponent implements OnInit, OnDestroy {
     { id: 'high-salary', label: 'High Salary', active: false },
     { id: 'startup', label: 'Startup', active: false },
     { id: 'tech', label: 'Tech', active: true },
-    { id: 'benefits', label: 'Great Benefits', active: false }
+    { id: 'benefits', label: 'Great Benefits', active: false },
   ]);
 
   // Computed signal for filtered jobs using the store
@@ -367,21 +436,22 @@ export class JobsComponent implements OnInit, OnDestroy {
 
     if (searchQuery) {
       const search = searchQuery.toLowerCase();
-      filtered = filtered.filter(job => 
-        job.title.toLowerCase().includes(search) ||
-        job.company.toLowerCase().includes(search) ||
-        job.description.toLowerCase().includes(search)
+      filtered = filtered.filter(
+        (job) =>
+          job.title.toLowerCase().includes(search) ||
+          job.company.toLowerCase().includes(search) ||
+          job.description.toLowerCase().includes(search)
       );
     }
 
     if (selectedLocation && selectedLocation !== '') {
-      filtered = filtered.filter(job => 
+      filtered = filtered.filter((job) =>
         job.location.toLowerCase().includes(selectedLocation.toLowerCase())
       );
     }
 
     if (selectedJobType && selectedJobType !== '') {
-      filtered = filtered.filter(job => job.type === selectedJobType);
+      filtered = filtered.filter((job) => job.type === selectedJobType);
     }
 
     return filtered;
@@ -406,7 +476,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Failed to load jobs:', error);
-      }
+      },
     });
   }
 
@@ -449,17 +519,17 @@ export class JobsComponent implements OnInit, OnDestroy {
 
   toggleFilter(filter: any) {
     const filters = this.quickFilters();
-    const index = filters.findIndex(f => f.id === filter.id);
+    const index = filters.findIndex((f) => f.id === filter.id);
     if (index !== -1) {
       filters[index].active = !filters[index].active;
       this.quickFilters.set([...filters]);
-      
+
       // Apply quick filters to store
       const activeFilters = filters.reduce((acc, f) => {
         acc[f.id] = f.active;
         return acc;
       }, {} as { [key: string]: boolean });
-      
+
       this.jobStore.applyQuickFilters(activeFilters).subscribe();
     }
   }
@@ -471,7 +541,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Failed to toggle bookmark:', error);
-      }
+      },
     });
   }
 
@@ -486,7 +556,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Failed to load more jobs:', error);
-      }
+      },
     });
   }
 
@@ -497,7 +567,7 @@ export class JobsComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Failed to refresh jobs:', error);
-      }
+      },
     });
   }
 
@@ -505,15 +575,15 @@ export class JobsComponent implements OnInit, OnDestroy {
     // Create consistent, professional colors based on company name
     const colors = [
       'bg-gradient-to-r from-blue-600 to-blue-700',
-      'bg-gradient-to-r from-slate-600 to-slate-700', 
+      'bg-gradient-to-r from-slate-600 to-slate-700',
       'bg-gradient-to-r from-indigo-600 to-indigo-700',
       'bg-gradient-to-r from-gray-600 to-gray-700',
       'bg-gradient-to-r from-emerald-600 to-emerald-700',
       'bg-gradient-to-r from-teal-600 to-teal-700',
       'bg-gradient-to-r from-cyan-600 to-cyan-700',
-      'bg-gradient-to-r from-violet-600 to-violet-700'
+      'bg-gradient-to-r from-violet-600 to-violet-700',
     ];
-    
+
     // Simple hash function to get consistent color for same company
     let hash = 0;
     for (let i = 0; i < company.length; i++) {
@@ -532,9 +602,9 @@ export class JobsComponent implements OnInit, OnDestroy {
       'bg-emerald-50 text-emerald-700',
       'bg-teal-50 text-teal-700',
       'bg-cyan-50 text-cyan-700',
-      'bg-violet-50 text-violet-700'
+      'bg-violet-50 text-violet-700',
     ];
-    
+
     // Simple hash for consistent colors
     let hash = 0;
     for (let i = 0; i < tag.length; i++) {
@@ -547,12 +617,12 @@ export class JobsComponent implements OnInit, OnDestroy {
     const typeClassMap: { [key: string]: string } = {
       'full-time': 'bg-emerald-50 text-emerald-700',
       'part-time': 'bg-blue-50 text-blue-700',
-      'contract': 'bg-violet-50 text-violet-700',
-      'internship': 'bg-amber-50 text-amber-700',
-      'freelance': 'bg-rose-50 text-rose-700',
-      'remote': 'bg-teal-50 text-teal-700'
+      contract: 'bg-violet-50 text-violet-700',
+      internship: 'bg-amber-50 text-amber-700',
+      freelance: 'bg-rose-50 text-rose-700',
+      remote: 'bg-teal-50 text-teal-700',
     };
-    
+
     return typeClassMap[type.toLowerCase()] || 'bg-gray-50 text-gray-700';
   }
 
@@ -573,36 +643,38 @@ export class JobsComponent implements OnInit, OnDestroy {
   }
 
   getQuickFilterClass(filter: any): string {
-    const filterColorMap: { [key: string]: { active: string, inactive: string } } = {
-      'remote': { 
-        active: 'bg-teal-600 text-white shadow-sm', 
-        inactive: 'bg-teal-50 text-teal-700 hover:bg-teal-100' 
+    const filterColorMap: {
+      [key: string]: { active: string; inactive: string };
+    } = {
+      remote: {
+        active: 'bg-teal-600 text-white shadow-sm',
+        inactive: 'bg-teal-50 text-teal-700 hover:bg-teal-100',
       },
-      'entry-level': { 
-        active: 'bg-emerald-600 text-white shadow-sm', 
-        inactive: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+      'entry-level': {
+        active: 'bg-emerald-600 text-white shadow-sm',
+        inactive: 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100',
       },
-      'high-salary': { 
-        active: 'bg-amber-600 text-white shadow-sm', 
-        inactive: 'bg-amber-50 text-amber-700 hover:bg-amber-100' 
+      'high-salary': {
+        active: 'bg-amber-600 text-white shadow-sm',
+        inactive: 'bg-amber-50 text-amber-700 hover:bg-amber-100',
       },
-      'startup': { 
-        active: 'bg-violet-600 text-white shadow-sm', 
-        inactive: 'bg-violet-50 text-violet-700 hover:bg-violet-100' 
+      startup: {
+        active: 'bg-violet-600 text-white shadow-sm',
+        inactive: 'bg-violet-50 text-violet-700 hover:bg-violet-100',
       },
-      'tech': { 
-        active: 'bg-blue-600 text-white shadow-sm', 
-        inactive: 'bg-blue-50 text-blue-700 hover:bg-blue-100' 
+      tech: {
+        active: 'bg-blue-600 text-white shadow-sm',
+        inactive: 'bg-blue-50 text-blue-700 hover:bg-blue-100',
       },
-      'benefits': { 
-        active: 'bg-rose-600 text-white shadow-sm', 
-        inactive: 'bg-rose-50 text-rose-700 hover:bg-rose-100' 
-      }
+      benefits: {
+        active: 'bg-rose-600 text-white shadow-sm',
+        inactive: 'bg-rose-50 text-rose-700 hover:bg-rose-100',
+      },
     };
 
-    const colors = filterColorMap[filter.id] || { 
-      active: 'bg-gray-600 text-white shadow-sm', 
-      inactive: 'bg-gray-50 text-gray-700 hover:bg-gray-100' 
+    const colors = filterColorMap[filter.id] || {
+      active: 'bg-gray-600 text-white shadow-sm',
+      inactive: 'bg-gray-50 text-gray-700 hover:bg-gray-100',
     };
 
     return filter.active ? colors.active : colors.inactive;
