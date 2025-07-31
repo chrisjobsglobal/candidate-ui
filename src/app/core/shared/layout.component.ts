@@ -1,6 +1,6 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { 
   LucideAngularModule, 
   Home, 
@@ -11,8 +11,11 @@ import {
   User, 
   Settings,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-angular';
+import { AuthStore } from '../../features/auth/auth.store';
+import { User as UserModel } from '../models/user.model';
 
 @Component({
   selector: 'app-layout',
@@ -33,7 +36,7 @@ import {
              [class.-translate-x-full]="!isMobileMenuOpen()">
         
         <!-- Logo -->
-        <div class="flex items-center justify-between h-16 px-6 border-b border-background-subtle">
+        <div class="flex items-center justify-between h-[65px] px-6 border-b border-background-subtle">
           <div class="h-[50px] w-full" style="background: url(/logo_red.png); background-size: contain; background-repeat:no-repeat; background-position: center"></div>
           <button 
             (click)="toggleMobileMenu()"
@@ -70,16 +73,69 @@ import {
         </nav>
 
         <!-- User Profile -->
-        <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-background-subtle">
-          <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-            <div class="w-10 h-10 bg-gradient-to-r from-gradient-start to-gradient-end rounded-full flex items-center justify-center">
-              <span class="text-white font-semibold text-sm">JD</span>
+        <div *ngIf="authStore.isAuthenticated()" class="absolute bottom-0 left-0 right-0 p-4 border-t border-background-subtle">
+          <div class="flex items-center space-x-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group">
+            <!-- User Avatar -->
+            <div class="w-10 h-10 bg-gradient-to-r from-gradient-start to-gradient-end rounded-full flex items-center justify-center relative">
+              <img 
+                *ngIf="shouldShowProfileImage()" 
+                [src]="currentUser()?.profilePicture" 
+                [alt]="userDisplayName()"
+                class="w-full h-full rounded-full object-cover"
+                (error)="onImageError($event)"
+              />
+              <span 
+                *ngIf="!shouldShowProfileImage()" 
+                class="text-white font-semibold text-sm"
+              >
+                {{ userInitials() }}
+              </span>
+              <!-- Online indicator -->
+              <div 
+                *ngIf="currentUser()?.isOnline"
+                class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"
+              ></div>
             </div>
+            
+            <!-- User Info -->
             <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-text-primary truncate">John Doe</p>
-              <p class="text-xs text-text-secondary truncate">Software Engineer</p>
+              <p class="text-sm font-medium text-text-primary truncate">{{ userDisplayName() }}</p>
+              <p class="text-xs text-text-secondary truncate">{{ userRole() }}</p>
+              <p *ngIf="currentUser()?.email" class="text-xs text-text-muted truncate">{{ currentUser()?.email }}</p>
             </div>
-            <lucide-angular [img]="SettingsIcon" size="16" class="text-text-secondary"></lucide-angular>
+            
+            <!-- Actions Dropdown -->
+            <div class="relative">
+              <button 
+                routerLink="/app/profile"
+                class="p-1 text-text-secondary hover:text-text-primary transition-colors group-hover:bg-gray-100 rounded"
+                title="Go to Profile"
+              >
+                <lucide-angular [img]="SettingsIcon" size="16"></lucide-angular>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Quick Logout Button -->
+          <button 
+            (click)="logout()"
+            class="w-full mt-2 flex items-center justify-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          >
+            <lucide-angular [img]="LogOutIcon" size="16"></lucide-angular>
+            <span>Sign Out</span>
+          </button>
+        </div>
+
+        <!-- Login Prompt (when not authenticated) -->
+        <div *ngIf="!authStore.isAuthenticated()" class="absolute bottom-0 left-0 right-0 p-4 border-t border-background-subtle">
+          <div class="text-center">
+            <p class="text-sm text-text-secondary mb-3">Please sign in to continue</p>
+            <button 
+              (click)="navigateToLogin()"
+              class="w-full bg-primary-900 hover:bg-primary-800 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Sign In
+            </button>
           </div>
         </div>
       </aside>
@@ -114,13 +170,15 @@ import {
 
             <!-- Actions -->
             <div class="flex items-center space-x-4">
-              <button class="relative p-2 text-text-secondary hover:text-text-primary transition-colors">
+              <button class="relative p-2 text-text-secondary hover:text-text-primary transition-colors" 
+                (click)="navigateNotifications()"
+              >
                 <lucide-angular [img]="BellIcon" size="20"></lucide-angular>
                 <span class="absolute -top-1 -right-1 w-5 h-5 bg-primary-900 text-white text-xs rounded-full flex items-center justify-center">3</span>
               </button>
-              <button class="relative p-2 text-text-secondary hover:text-text-primary transition-colors">
+              <button class="relative p-2 text-text-secondary hover:text-text-primary transition-colors" (click)="navigateMessages()">
                 <lucide-angular [img]="MessageSquareIcon" size="20"></lucide-angular>
-                <span class="absolute -top-1 -right-1 w-2 h-2 bg-primary-900 rounded-full"></span>
+                <span class="absolute -top-0 -right-0 w-2 h-2 bg-primary-900 rounded-full"></span>
               </button>
             </div>
           </div>
@@ -144,20 +202,85 @@ export class LayoutComponent {
   readonly SettingsIcon = Settings;
   readonly MenuIcon = Menu;
   readonly XIcon = X;
+  readonly LogOutIcon = LogOut;
+
+  // Inject services
+  readonly router = inject(Router);
+  readonly authStore = inject(AuthStore);
 
   isMobileMenuOpen = signal(false);
+  profileImageError = signal(false);
+
+  // Computed values for user info
+  readonly currentUser = computed(() => this.authStore.user() as UserModel | null);
+  readonly userDisplayName = computed(() => {
+    const user = this.currentUser();
+    if (user) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return 'Guest User';
+  });
+  readonly userInitials = computed(() => {
+    const user = this.currentUser();
+    if (user) {
+      return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    }
+    return 'GU';
+  });
+  readonly userRole = computed(() => {
+    const user = this.currentUser();
+    if (user) {
+      return user.role === 'jobseeker' ? 'Job Seeker' : 
+             user.role === 'recruiter' ? 'Recruiter' : 
+             'Administrator';
+    }
+    return 'Guest';
+  });
+  readonly shouldShowProfileImage = computed(() => {
+    return this.currentUser()?.profilePicture && !this.profileImageError();
+  });
+
+  constructor() {
+    // Reset profile image error when user changes
+    effect(() => {
+      // This effect runs whenever the user signal changes
+      this.currentUser();
+      this.profileImageError.set(false);
+    });
+  }
 
   navigationItems = [
-    { icon: Home, label: 'Home', route: '/dashboard', badge: null },
-    { icon: Search, label: 'Discover', route: '/discover', badge: null },
-    { icon: Briefcase, label: 'Jobs', route: '/jobs', badge: '5' },
-    { icon: User, label: 'Applications', route: '/applications', badge: null },
-    { icon: MessageSquare, label: 'Messages', route: '/messages', badge: '2' },
-    { icon: Bell, label: 'Notifications', route: '/notifications', badge: null },
-    { icon: User, label: 'Profile', route: '/profile', badge: null },
+    { icon: Home, label: 'Home', route: '/app/dashboard', badge: null },
+    { icon: Search, label: 'Discover', route: '/app/discover', badge: null },
+    { icon: Briefcase, label: 'Jobs', route: '/app/jobs', badge: '5' },
+    { icon: User, label: 'Applications', route: '/app/applications', badge: null },
+    { icon: MessageSquare, label: 'Messages', route: '/app/messages', badge: '2' },
+    { icon: Bell, label: 'Notifications', route: '/app/notifications', badge: null },
+    { icon: User, label: 'Profile', route: '/app/profile', badge: null },
   ];
+
+  navigateNotifications() {
+    this.router.navigate(['/app/notifications']);
+  }
+
+  navigateMessages() {
+    this.router.navigate(['/app/messages']);
+  }
 
   toggleMobileMenu() {
     this.isMobileMenuOpen.update(value => !value);
+  }
+
+  logout() {
+    this.authStore.logout();
+    this.router.navigate(['/login']);
+  }
+
+  onImageError(event: Event) {
+    this.profileImageError.set(true);
+  }
+
+  navigateToLogin() {
+    this.router.navigate(['/login']);
   }
 }

@@ -10,6 +10,18 @@ export const routes: Routes = [
     path: 'hero',
     loadComponent: () => import('./public/hero/hero.component').then(m => m.HeroComponent)
   },
+  {
+    path: 'login',
+    loadComponent: () => import('./public/login/login.component').then(m => m.LoginComponent)
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () => import('./public/login/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./public/register/register.component').then(m => m.RegisterComponent)
+  },
   // Authenticated routes (with layout)
   {
     path: 'app',
