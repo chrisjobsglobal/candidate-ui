@@ -17,6 +17,7 @@ export interface UserProfileResponse {
   created_at: string;
   updated_at: string | null;
   last_login: string | null;
+  last_seen: string | null;
   first_name: string;
   last_name: string;
   avatar_url: string | null;
@@ -24,9 +25,15 @@ export interface UserProfileResponse {
   profile_tag: string | null;
   bio: string;
   is_verified: boolean;
+  is_online: boolean;
   mobile: string | null;
   address: string | null;
   country: string | null;
+  is_hiring: boolean;
+  is_open_to_work: boolean;
+  job_title: string;
+  company: string;
+  work_status_message: string;
 }
 
 /**
@@ -51,8 +58,8 @@ export interface UserFilter extends BaseFilter {
   role?: 'jobseeker' | 'recruiter' | 'admin';
   isActive?: boolean;
   email?: string;
-  firstName?: string;
-  lastName?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 /**
@@ -119,7 +126,7 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
   protected getDefaultFilter(): UserFilter {
     return {
       search: '',
-      sortBy: 'firstName',
+      sortBy: 'first_name',
       sortDirection: 'asc'
     };
   }
@@ -171,24 +178,23 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
    */
   private mapApiUserToUser(apiUser: UserProfileResponse): User {
     console.log('Mapping API user to User model:', apiUser);
-    const mappedUser = {
-      id: apiUser.id,
-      email: apiUser.email,
-      firstName: apiUser.first_name,
-      lastName: apiUser.last_name,
-      profilePicture: apiUser.avatar_url ? this.configService.getUploadUrl(apiUser.avatar_url) : undefined,
-      coverPhoto: apiUser.cover_photo ? this.configService.getUploadUrl(apiUser.cover_photo) : undefined,
-      profileTag: apiUser.profile_tag || undefined,
-      role: this.mapUserRole(apiUser),
-      isOnline: apiUser.is_active,
-      lastSeen: apiUser.last_login ? new Date(apiUser.last_login) : new Date(),
-      createdAt: new Date(apiUser.created_at),
-      updatedAt: apiUser.updated_at ? new Date(apiUser.updated_at) : new Date()
+    const mappedUser: User = {
+      ...apiUser,
+      mobile: apiUser.mobile || '',
+      address: apiUser.address || '',
+      country: apiUser.country || '',
+      avatar_url: apiUser.avatar_url ? this.configService.getUploadUrl(apiUser.avatar_url) : undefined,
+      cover_photo: apiUser.cover_photo ? this.configService.getUploadUrl(apiUser.cover_photo) : undefined,
+      profile_tag: apiUser.profile_tag || '',
+      last_seen: apiUser.last_seen || '',
+      updated_at: apiUser.updated_at || '',
+      last_login: apiUser.last_login || '',
+      bio: apiUser.bio || '',
     };
     console.log('Mapped user:', mappedUser);
-    console.log('Profile picture URL:', mappedUser.profilePicture);
-    console.log('Cover photo URL:', mappedUser.coverPhoto);
-    console.log('Profile tag:', mappedUser.profileTag);
+    console.log('Profile picture URL:', mappedUser.avatar_url);
+    console.log('Cover photo URL:', mappedUser.cover_photo);
+    console.log('Profile tag:', mappedUser.profile_tag);
     return mappedUser;
   }
 
@@ -373,7 +379,7 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
       if (storedUser) {
         const user = JSON.parse(storedUser);
         // Validate the user object has required properties
-        if (user && user.id && user.firstName && user.lastName) {
+        if (user && user.id && user.first_name && user.last_name) {
           this.addOrUpdateUserInStore(user);
         } else {
           console.warn('Invalid user data in localStorage, clearing it');
@@ -421,7 +427,7 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
           const currentUser = this.currentUser();
           if (currentUser) {
             const correctedAvatarUrl = this.configService.getUploadUrl(response.avatar_url);
-            const updatedUser = { ...currentUser, profilePicture: correctedAvatarUrl };
+            const updatedUser = { ...currentUser, avatar_url: correctedAvatarUrl };
             this.addOrUpdateUserInStore(updatedUser);
             
             // Also update localStorage
@@ -476,7 +482,7 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
           const currentUser = this.currentUser();
           if (currentUser) {
             const correctedCoverPhotoUrl = this.configService.getUploadUrl(response.cover_photo_url);
-            const updatedUser = { ...currentUser, coverPhoto: correctedCoverPhotoUrl };
+            const updatedUser = { ...currentUser, cover_photo: correctedCoverPhotoUrl };
             this.addOrUpdateUserInStore(updatedUser);
             
             // Also update localStorage
@@ -516,8 +522,8 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
    */
   getProfileUrl(user: User): string {
     const baseUrl = window.location.origin;
-    if (user.profileTag) {
-      return `${baseUrl}/profile/${user.profileTag}`;
+    if (user.profile_tag) {
+      return `${baseUrl}/profile/${user.profile_tag}`;
     }
     return `${baseUrl}/profile/${user.id}`;
   }
@@ -546,7 +552,7 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
    * Get user's full name
    */
   getUserFullName(user: User): string {
-    return `${user.firstName} ${user.lastName}`;
+    return `${user.first_name} ${user.last_name}`;
   }
 
   /**
@@ -554,6 +560,6 @@ export class UserStore extends BaseStore<User, CreateUserDto, UpdateUserProfileD
    */
   isUserOnline(userId: string): boolean {
     const user = this.items().find(u => u.id === userId);
-    return user?.isOnline || false;
+    return user?.is_online || false;
   }
 }

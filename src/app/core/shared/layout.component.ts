@@ -193,15 +193,15 @@ export class LayoutComponent {
   );
   readonly userDisplayName = computed(() => {
     const user = this.currentUser();
-    if (user && user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+    if (user && user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
     }
     return 'Guest User';
   });
   readonly userInitials = computed(() => {
     const user = this.currentUser();
-    if (user && user.firstName && user.lastName) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(
+    if (user && user.first_name && user.last_name) {
+      return `${user.first_name.charAt(0)}${user.last_name.charAt(
         0
       )}`.toUpperCase();
     }
@@ -209,18 +209,18 @@ export class LayoutComponent {
   });
   readonly userRole = computed(() => {
     const user = this.currentUser();
-    if (user && user.role) {
-      return user.role === 'jobseeker'
-        ? 'Job Seeker'
-        : user.role === 'recruiter'
-        ? 'Recruiter'
-        : 'Administrator';
+    if (user) {
+      if (user.is_hiring) {
+        return 'Recruiter';
+      } else if (user.is_open_to_work) {
+        return 'Job Seeker';
+      }
     }
     return 'Guest';
   });
   readonly shouldShowProfileImage = computed(() => {
     const user = this.currentUser();
-    return user?.profilePicture && !this.profileImageError();
+    return user?.avatar_url && !this.profileImageError();
   });
 
   constructor() {

@@ -5,9 +5,11 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { UserStore } from '../store/user.store';
 import { ConfigService } from '../../../core/services/config.service';
 import { ProfileHeaderComponent } from './profile-header.components';
+import { EditProfileBioComponent } from './edit-profile-bio.component';
 import {
   LucideAngularModule,
   Edit3,
@@ -55,7 +57,7 @@ interface Skill {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, ProfileHeaderComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ProfileHeaderComponent, EditProfileBioComponent],
   template: `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       <!-- Profile Header -->
@@ -95,27 +97,18 @@ interface Skill {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         <!-- Left Column -->
         <div class="lg:col-span-2 space-y-8">
           <!-- About -->
-          <div class="bg-white rounded-xl p-6 shadow-elegant">
-            <div class="flex items-center justify-between mb-6">
+          <div class="bg-white rounded-xl p-4 shadow-elegant">
+            <div class="flex items-center justify-between pl-2 pt-2">
               <h2 class="text-xl font-semibold text-text-primary">About</h2>
-              <button
-                class="p-2 text-text-secondary hover:text-text-primary transition-colors"
-              >
-                <lucide-angular [img]="Edit3Icon" size="16"></lucide-angular>
-              </button>
             </div>
-            <p class="text-text-secondary leading-relaxed">
-              Passionate Senior Software Engineer with 8+ years of experience in
-              full-stack development. Specialized in building scalable web
-              applications using modern JavaScript frameworks including Angular,
-              React, and Node.js. Strong background in cloud technologies,
-              DevOps practices, and team leadership. Always eager to learn new
-              technologies and mentor junior developers.
-            </p>
+            <app-edit-profile-bio 
+              [bio]="currentUser()?.bio || ''"
+              (bioUpdated)="onBioUpdated($event)"
+            ></app-edit-profile-bio>
           </div>
 
           <!-- Experience -->
@@ -375,6 +368,7 @@ interface Skill {
 export class ProfileComponent {
   private readonly userStore = inject(UserStore);
   private readonly configService = inject(ConfigService);
+  private readonly router = inject(Router);
 
   readonly Edit3Icon = Edit3;
   readonly MapPinIcon = MapPin;
@@ -413,7 +407,7 @@ export class ProfileComponent {
     // Debug: Log current user changes
     setTimeout(() => {
       console.log('Current user in profile component:', this.currentUser());
-      console.log('Profile picture URL:', this.currentUser()?.profilePicture);
+      console.log('Profile picture URL:', this.currentUser()?.avatar_url);
       console.log(
         'Config service - API Base URL:',
         this.configService.getApiBaseUrl()
@@ -429,8 +423,7 @@ export class ProfileComponent {
    * Handle edit profile button click from header
    */
   onEditProfile(): void {
-    console.log('Edit profile clicked');
-    // TODO: Implement edit profile functionality
+    this.router.navigate(['/app/profile/edit']);
   }
 
   /**
@@ -442,6 +435,15 @@ export class ProfileComponent {
     setTimeout(() => {
       this.uploadMessage.set(null);
     }, 5000);
+  }
+
+  /**
+   * Handle bio update from the bio editing component
+   */
+  onBioUpdated(newBio: string): void {
+    console.log('Bio updated:', newBio);
+    // The user store will automatically update the current user signal
+    // when the bio is successfully updated via the API
   }
 
   /**

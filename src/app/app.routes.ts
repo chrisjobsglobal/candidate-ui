@@ -45,6 +45,18 @@ export const routes: Routes = [
         loadComponent: () => import('./features/user/profile/profile.component').then(m => m.ProfileComponent)
       },
       {
+        path: 'profile/edit',
+        loadComponent: () => import('./features/user/profile/edit-profile.component').then(m => m.EditProfileComponent)
+      },
+      {
+        path: 'profile/work-status',
+        loadComponent: () => import('./features/user/profile/edit-profile-work-status.component').then(m => m.EditProfileWorkStatusComponent)
+      },
+      {
+        path: 'test-work-status',
+        loadComponent: () => import('./test-work-status.component').then(m => m.TestWorkStatusComponent)
+      },
+      {
         path: 'messages',
         loadComponent: () => import('./features/messages.component').then(m => m.MessagesComponent)
       },

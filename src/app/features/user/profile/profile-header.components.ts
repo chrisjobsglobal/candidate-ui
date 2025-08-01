@@ -6,11 +6,18 @@ import {
   ElementRef,
   input,
   output,
+  OnInit,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { UserStore } from '../store/user.store';
+import { UserWorkStatusStore } from '../store/user-work-status.store';
 import { ConfigService } from '../../../core/services/config.service';
-import { CoverPhotoCropperComponent, CropResult } from './cover-photo-cropper.component';
+import {
+  CoverPhotoCropperComponent,
+  CropResult,
+} from './cover-photo-cropper.component';
 import { CustomProfileUrlComponent } from './custom-profile-url.component';
 import {
   LucideAngularModule,
@@ -25,12 +32,19 @@ import {
   Briefcase,
   Funnel,
   Camera,
+  Building2,
+  Edit,
 } from 'lucide-angular';
 
 @Component({
   selector: 'app-profile-header',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, CoverPhotoCropperComponent, CustomProfileUrlComponent],
+  imports: [
+    CommonModule,
+    LucideAngularModule,
+    CoverPhotoCropperComponent,
+    CustomProfileUrlComponent,
+  ],
   template: `
     <!-- Hidden file input for avatar upload -->
     <input
@@ -53,30 +67,38 @@ import {
     <!-- Profile Header -->
     <div class="bg-white rounded-2xl shadow-elegant overflow-hidden">
       <!-- Cover Photo -->
-      <div 
+      <div
         class="h-48 lg:h-56 relative group cursor-pointer overflow-hidden"
-        [class.bg-gradient-to-r]="!currentUser()?.coverPhoto"
-        [class.from-gray-950]="!currentUser()?.coverPhoto"
-        [class.to-gray-800]="!currentUser()?.coverPhoto"
+        [class.bg-gradient-to-r]="!currentUser()?.cover_photo"
+        [class.from-gray-950]="!currentUser()?.cover_photo"
+        [class.to-gray-800]="!currentUser()?.cover_photo"
         (click)="triggerCoverPhotoUpload()"
       >
         <!-- Cover photo image -->
         <img
-          *ngIf="currentUser()?.coverPhoto"
-          [src]="currentUser()!.coverPhoto"
+          *ngIf="currentUser()?.cover_photo"
+          [src]="currentUser()!.cover_photo"
           alt="Cover Photo"
           class="absolute inset-0 w-full h-full object-cover"
           (error)="onImageError($event)"
         />
-        
+
         <!-- Cover photo upload overlay -->
         <div
           *ngIf="!isUploadingCoverPhoto()"
           class="absolute inset-0 bg-black/20 hover:bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200"
         >
           <div class="text-center text-white">
-            <lucide-angular [img]="CameraIcon" size="32" class="mx-auto mb-2"></lucide-angular>
-            <span class="text-sm font-medium">{{ currentUser()?.coverPhoto ? 'Change Cover Photo' : 'Add Cover Photo' }}</span>
+            <lucide-angular
+              [img]="CameraIcon"
+              size="32"
+              class="mx-auto mb-2"
+            ></lucide-angular>
+            <span class="text-sm font-medium">{{
+              currentUser()?.cover_photo
+                ? 'Change Cover Photo'
+                : 'Add Cover Photo'
+            }}</span>
           </div>
         </div>
 
@@ -86,7 +108,9 @@ import {
           class="absolute inset-0 bg-black/50 flex items-center justify-center"
         >
           <div class="text-center text-white">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"></div>
+            <div
+              class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-2"
+            ></div>
             <span class="text-sm font-medium">Uploading...</span>
           </div>
         </div>
@@ -103,22 +127,23 @@ import {
       <!-- Profile Info -->
       <div class="relative px-6 lg:px-8 pb-8 -mt-24">
         <!-- Profile Picture and Info -->
-        <div class="flex flex-col lg:flex-row lg:items-end space-y-6 lg:space-y-0 lg:space-x-8 ">
+        <div
+          class="flex flex-col lg:flex-row lg:items-end space-y-6 lg:space-y-0 lg:space-x-8 "
+        >
           <div class="relative flex-shrink-0 self-center lg:self-auto">
             <div
               class="w-32 h-32 bg-gradient-to-r from-gradient-start to-gradient-end rounded-full border-4 border-white flex items-center justify-center overflow-hidden group cursor-pointer shadow-xl "
               (click)="triggerAvatarUpload()"
             >
-
               <img
-                *ngIf="currentUser()?.profilePicture"
-                [src]="currentUser()!.profilePicture"
+                *ngIf="currentUser()?.avatar_url"
+                [src]="currentUser()!.avatar_url"
                 alt="Profile Picture"
                 class="w-full h-full object-cover"
                 (error)="onImageError($event)"
               />
               <span
-                *ngIf="!currentUser()?.profilePicture"
+                *ngIf="!currentUser()?.avatar_url"
                 class="text-4xl font-bold text-white"
                 >{{ getUserInitials() }}</span
               >
@@ -163,27 +188,62 @@ import {
               <!-- Main Info Section -->
               <div class="flex flex-wrap items-start justify-center mb-6">
                 <div class="flex-1">
-                  <h1 class="text-4xl md:text-5xl font-bold text-gray-900 lg:text-white  leading-tight whitespace-nowrap">
+                  <h1
+                    class="text-4xl md:text-5xl font-bold text-gray-900 lg:text-white leading-tight whitespace-nowrap"
+                  >
                     {{ getUserFullName() }}
                   </h1>
-                  <p class="text-xl text-gray-600 font-medium ">
-                    Senior Software Engineer
-                  </p>
+                  
+                  <!-- Job Title and Company -->
+                  <div class="mt-0">
+                    @if (workStatusStore.hasData()) {
+                      <div class="flex items-center space-x-2">
+                        <p class="text-sm xl:text-lg text-gray-600  font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                          @if (workStatusStore.jobTitle()) {
+                            {{ workStatusStore.jobTitle() }}
+                          } @else {
+                            Working
+                          }
+                          @if (workStatusStore.company()) {
+                            <span class="text-gray-500 ps-1 pe-2">at</span>
+                            <span class="text-gray-700">{{ workStatusStore.company() }}</span>
+                          }
+                        </p>
+                        <button
+                          (click)="onEditWorkStatus()"
+                          class="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                          title="Edit work status"
+                        >
+                          <lucide-angular [img]="EditIcon" size="16"></lucide-angular>
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="flex items-center space-x-2">
+                        <p class="text-xl text-gray-600 font-medium">
+                          Update Work Status
+                        </p>
+                        <button
+                          (click)="onEditWorkStatus()"
+                          class="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                          title="Add work status"
+                        >
+                          <lucide-angular [img]="EditIcon" size="16"></lucide-angular>
+                        </button>
+                      </div>
+                    }
+                  </div>
                 </div>
-                
+
                 <!-- Action Buttons -->
                 <div class="flex items-center space-x-3 ml-6 mt-4">
                   <button
-                    class="flex items-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                    class="flex items-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
                   >
-                    <lucide-angular
-                      [img]="EyeIcon"
-                      size="16"
-                    ></lucide-angular>
+                    <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
                     <span class="font-medium">{{ profileStats().views }}</span>
                   </button>
                   <button
-                    class="flex items-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-700 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                    class="flex items-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
                   >
                     <lucide-angular
                       [img]="Share2Icon"
@@ -202,30 +262,110 @@ import {
 
               <!-- Stats Section -->
               <div class="flex flex-wrap items-center gap-x-8 gap-y-3 mt-auto">
+                <!-- Work Status Badges -->
+                @if (workStatusStore.hasData()) {
+                  @if (workStatusStore.isHiring()) {
+                    <div class="flex items-center space-x-2">
+                      <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <lucide-angular [img]="UsersIcon" size="12" class="mr-1"></lucide-angular>
+                        Hiring
+                      </div>
+                      <button
+                        (click)="onEditWorkStatus()"
+                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Edit work status"
+                      >
+                        <lucide-angular [img]="EditIcon" size="12"></lucide-angular>
+                      </button>
+                    </div>
+                  }
+                  @if (workStatusStore.isOpenToWork()) {
+                    <div class="flex items-center space-x-2">
+                      <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <lucide-angular [img]="BriefcaseIcon" size="12" class="mr-1"></lucide-angular>
+                        Open to work
+                      </div>
+                      <button
+                        (click)="onEditWorkStatus()"
+                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Edit work status"
+                      >
+                        <lucide-angular [img]="EditIcon" size="12"></lucide-angular>
+                      </button>
+                    </div>
+                  }
+                  @if (!workStatusStore.isHiring() && !workStatusStore.isOpenToWork()) {
+                    <div class="flex items-center space-x-2">
+                      <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        <lucide-angular [img]="Building2Icon" size="12" class="mr-1"></lucide-angular>
+                        Currently employed
+                      </div>
+                      <button
+                        (click)="onEditWorkStatus()"
+                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Edit work status"
+                      >
+                        <lucide-angular [img]="EditIcon" size="12"></lucide-angular>
+                      </button>
+                    </div>
+                  }
+                } @else {
+                  <div class="flex items-center space-x-2">
+                    <button
+                      (click)="onEditWorkStatus()"
+                      class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-1"
+                    >
+                      <lucide-angular [img]="BriefcaseIcon" size="14"></lucide-angular>
+                      <span>Add work status</span>
+                    </button>
+                  </div>
+                }
+                
+                <!-- Status Message (if exists) -->
+                @if (workStatusStore.workStatusMessage()) {
+                  <div class="flex items-center space-x-2 text-sm text-gray-600 italic max-w-sm">
+                    <lucide-angular [img]="EditIcon" size="14" class="text-gray-400"></lucide-angular>
+                    <span>"{{ workStatusStore.workStatusMessage() }}"</span>
+                  </div>
+                }
+
+                <!-- Location -->
                 <div class="flex items-center space-x-2">
                   <lucide-angular
                     [img]="MapPinIcon"
                     size="16"
                     class="text-green-600"
                   ></lucide-angular>
-                  <span class="text-gray-700 font-medium">San Francisco, CA</span>
+                  <span class="text-gray-700 font-medium"
+                    >San Francisco, CA</span
+                  >
                 </div>
+
+                <!-- Connections -->
                 <div class="flex items-center space-x-2">
                   <lucide-angular
                     [img]="UsersIcon"
                     size="16"
                     class="text-blue-600"
                   ></lucide-angular>
-                  <span class="text-gray-700 font-medium">{{ profileStats().connections }} connections</span>
+                  <span class="text-gray-700 font-medium"
+                    >{{ profileStats().connections }} connections</span
+                  >
                 </div>
+
+                <!-- Applications -->
                 <div class="flex items-center space-x-2">
                   <lucide-angular
                     [img]="BriefcaseIcon"
                     size="16"
                     class="text-amber-600"
                   ></lucide-angular>
-                  <span class="text-gray-700 font-medium">4 active applications</span>
+                  <span class="text-gray-700 font-medium"
+                    >4 active applications</span
+                  >
                 </div>
+
+                <!-- Shortlisted -->
                 <div class="flex items-center space-x-2">
                   <lucide-angular
                     [img]="FunnelIcon"
@@ -240,24 +380,36 @@ import {
         </div>
 
         <!-- Contact Info -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-gray-200">
-          <div class="flex items-center space-x-3 text-gray-600 hover:text-gray-900 transition-colors">
+        <div
+          class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 pt-8 border-t border-gray-200"
+        >
+          <div
+            class="flex items-center space-x-3 text-gray-800 hover:text-gray-900 transition-colors"
+          >
             <div class="p-2 bg-gray-100 rounded-lg">
               <lucide-angular [img]="MailIcon" size="16"></lucide-angular>
             </div>
-            <span class="font-medium">{{ currentUser()?.email || 'john.doe@email.com' }}</span>
+            <span class="font-medium">{{
+              currentUser()?.email || 'john.doe@email.com'
+            }}</span>
           </div>
-          <div class="flex items-center space-x-3 text-gray-600 hover:text-gray-900 transition-colors">
+          <div
+            class="flex items-center space-x-3 text-gray-800 hover:text-gray-900 transition-colors"
+          >
             <div class="p-2 bg-gray-100 rounded-lg">
               <lucide-angular [img]="PhoneIcon" size="16"></lucide-angular>
             </div>
-            <span class="font-medium">+1 (555) 123-4567</span>
+            <span class="font-medium">{{
+              currentUser()?.mobile || 'empty'
+            }}</span>
           </div>
-          <div class="flex items-center space-x-3 text-gray-600 hover:text-gray-900 transition-colors">
+          <div class="flex items-center space-x-3 text-gray-800 hover:text-gray-900 transition-colors">
             <div class="p-2 bg-gray-100 rounded-lg">
               <lucide-angular [img]="GlobeIcon" size="16"></lucide-angular>
             </div>
-            <span class="font-medium">johndoe.dev</span>
+            <span class="font-medium">{{
+              currentUser()?.country || 'not set'
+            }}</span>
           </div>
         </div>
 
@@ -276,9 +428,10 @@ import {
     ></app-cover-photo-cropper>
   `,
 })
-export class ProfileHeaderComponent {
+export class ProfileHeaderComponent implements OnInit {
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('coverPhotoFileInput') coverPhotoFileInput!: ElementRef<HTMLInputElement>;
+  @ViewChild('coverPhotoFileInput')
+  coverPhotoFileInput!: ElementRef<HTMLInputElement>;
 
   // Inputs
   profileStats = input({
@@ -289,9 +442,12 @@ export class ProfileHeaderComponent {
 
   // Outputs
   editProfile = output<void>();
+  editWorkStatus = output<void>();
   uploadMessage = output<{ type: 'success' | 'error'; message: string }>();
 
   private readonly userStore = inject(UserStore);
+  protected readonly workStatusStore = inject(UserWorkStatusStore);
+  private readonly router = inject(Router);
   private readonly configService = inject(ConfigService);
 
   readonly Edit3Icon = Edit3;
@@ -305,9 +461,34 @@ export class ProfileHeaderComponent {
   readonly BriefcaseIcon = Briefcase;
   readonly FunnelIcon = Funnel;
   readonly CameraIcon = Camera;
+  readonly Building2Icon = Building2;
+  readonly EditIcon = Edit;
 
   // Current user from store
   readonly currentUser = this.userStore.currentUser;
+
+  constructor() {
+    // Use effect to watch for user authentication changes
+    effect(() => {
+      const user = this.currentUser();
+      if (user && user.id) {
+        // User is authenticated, load work status
+        this.workStatusStore.getWorkStatus().subscribe({
+          error: (error) => {
+            // Only log non-auth errors
+            if (error.status !== 401 && error.status !== 403) {
+              console.warn('Failed to load work status:', error);
+            }
+          }
+        });
+      }
+    });
+  }
+
+  // Component lifecycle
+  ngOnInit(): void {
+    // Additional initialization if needed
+  }
 
   // Upload states
   readonly isUploadingAvatar = signal(false);
@@ -315,7 +496,9 @@ export class ProfileHeaderComponent {
 
   // Cover photo cropping state
   readonly showCoverPhotoCropper = signal(false);
-  readonly coverPhotoForCropping = signal<{ file: File; url: string } | null>(null);
+  readonly coverPhotoForCropping = signal<{ file: File; url: string } | null>(
+    null
+  );
 
   /**
    * Get user's full name
@@ -323,7 +506,7 @@ export class ProfileHeaderComponent {
   getUserFullName(): string {
     const user = this.currentUser();
     if (user) {
-      return `${user.firstName} ${user.lastName}`;
+      return `${user.first_name} ${user.last_name}`;
     }
     return 'John Doe'; // Fallback
   }
@@ -334,7 +517,7 @@ export class ProfileHeaderComponent {
   getUserInitials(): string {
     const user = this.currentUser();
     if (user) {
-      return `${user.firstName.charAt(0)}${user.lastName.charAt(
+      return `${user.first_name.charAt(0)}${user.last_name.charAt(
         0
       )}`.toUpperCase();
     }
@@ -456,7 +639,7 @@ export class ProfileHeaderComponent {
    */
   onCoverPhotoCropComplete(cropResult: CropResult): void {
     this.showCoverPhotoCropper.set(false);
-    
+
     // Clean up the object URL
     const currentCrop = this.coverPhotoForCropping();
     if (currentCrop) {
@@ -473,7 +656,7 @@ export class ProfileHeaderComponent {
    */
   onCoverPhotoCropCancel(): void {
     this.showCoverPhotoCropper.set(false);
-    
+
     // Clean up the object URL
     const currentCrop = this.coverPhotoForCropping();
     if (currentCrop) {
@@ -534,6 +717,13 @@ export class ProfileHeaderComponent {
    */
   onEditProfile(): void {
     this.editProfile.emit();
+  }
+
+  /**
+   * Handle edit work status button click
+   */
+  onEditWorkStatus(): void {
+    this.router.navigate(['/app/profile/work-status']);
   }
 
   /**

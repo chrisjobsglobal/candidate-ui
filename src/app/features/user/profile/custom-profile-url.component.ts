@@ -54,7 +54,7 @@ import {
       <!-- Edit Mode -->
       <div *ngIf="isEditingProfileTag()" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-gray-800 mb-2">
             Custom URL
           </label>
           <div class="relative">
@@ -177,7 +177,7 @@ export class CustomProfileUrlComponent {
    */
   startEditingProfileTag(): void {
     const currentUser = this.currentUser();
-    this.profileTagValue.set(currentUser?.profileTag || '');
+    this.profileTagValue.set(currentUser?.profile_tag || '');
     this.isEditingProfileTag.set(true);
     this.profileTagAvailable.set(null);
     this.profileTagMessage.set('');
@@ -222,7 +222,7 @@ export class CustomProfileUrlComponent {
 
     // Check if it's the same as current tag
     const currentUser = this.currentUser();
-    if (currentUser?.profileTag === profileTag) {
+    if (currentUser?.profile_tag === profileTag) {
       this.profileTagAvailable.set(true);
       this.profileTagMessage.set('Current profile tag');
       return;
