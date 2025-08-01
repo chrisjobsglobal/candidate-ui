@@ -4,6 +4,8 @@ export interface User {
   firstName: string;
   lastName: string;
   profilePicture?: string;
+  coverPhoto?: string;
+  profileTag?: string;
   role: 'jobseeker' | 'recruiter' | 'admin';
   isOnline: boolean;
   lastSeen: Date;

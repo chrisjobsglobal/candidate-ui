@@ -13,6 +13,7 @@ import {
   ArrowLeft
 } from 'lucide-angular';
 import { AuthStore, LoginRequest } from '../../features/auth/auth.store';
+import { UserStore } from '../../features/user/store/user.store';
 
 @Component({
   selector: 'app-login',
@@ -252,6 +253,7 @@ export class LoginComponent {
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   readonly authStore = inject(AuthStore);
+  private readonly userStore = inject(UserStore);
 
   // Signals
   showPassword = signal(false);
@@ -271,7 +273,17 @@ export class LoginComponent {
 
     // Check if user is already authenticated and redirect
     if (this.authStore.isAuthenticated()) {
-      this.router.navigate(['/app/dashboard']);
+      // Fetch user profile and navigate to dashboard
+      this.userStore.fetchCurrentUserProfile().subscribe({
+        next: () => {
+          this.router.navigate(['/app/dashboard']);
+        },
+        error: (error) => {
+          console.error('Failed to fetch user profile:', error);
+          // Still navigate to dashboard even if profile fetch fails
+          this.router.navigate(['/app/dashboard']);
+        }
+      });
     }
   }
 
@@ -296,6 +308,9 @@ export class LoginComponent {
       try {
         // Call the auth store login method
         await firstValueFrom(this.authStore.login(loginRequest));
+        
+        // Fetch current user profile to update user store
+        await firstValueFrom(this.userStore.fetchCurrentUserProfile());
         
         // Navigate to dashboard on successful login
         this.router.navigate(['/app/dashboard']);

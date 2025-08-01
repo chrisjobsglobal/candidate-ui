@@ -62,7 +62,7 @@ interface Conversation {
               <lucide-angular 
                 [img]="SearchIcon" 
                 size="20" 
-                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-secondary"
+                class="absolute left-2 top-1/2 transform -translate-y-1/2 text-text-secondary"
               ></lucide-angular>
               <input 
                 type="text" 
@@ -209,7 +209,7 @@ interface Conversation {
 
         <!-- No Conversation Selected -->
         <ng-template #noConversation>
-          <div class="flex-1 flex items-center justify-center bg-gray-50">
+          <div class="flex-1 flex items-center justify-center bg-gray-50/40">
             <div class="text-center">
               <div class="w-16 h-16 bg-background-subtle rounded-full flex items-center justify-center mx-auto mb-4">
                 <lucide-angular [img]="UsersIcon" size="24" class="text-text-secondary"></lucide-angular>
