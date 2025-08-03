@@ -45,6 +45,7 @@ import {
     CoverPhotoCropperComponent,
     CustomProfileUrlComponent,
   ],
+  styleUrls: ['./profile.component.css'],
   template: `
     <!-- Hidden file input for avatar upload -->
     <input
@@ -74,6 +75,7 @@ import {
         [class.to-gray-800]="!currentUser()?.cover_photo"
         (click)="triggerCoverPhotoUpload()"
       >
+        
         <!-- Cover photo image -->
         <img
           *ngIf="currentUser()?.cover_photo"
@@ -82,6 +84,12 @@ import {
           class="absolute inset-0 w-full h-full object-cover"
           (error)="onImageError($event)"
         />
+
+        <!-- Dark gradient overlay for text visibility -->
+        <div
+          *ngIf="currentUser()?.cover_photo"
+          class="absolute inset-0 bg-gradient-to-r from-black/50 from-0% via-black/10 via-30% to-transparent"
+        ></div>
 
         <!-- Cover photo upload overlay -->
         <div
@@ -125,7 +133,7 @@ import {
       </div>
 
       <!-- Profile Info -->
-      <div class="relative px-6 lg:px-8 pb-8 -mt-24">
+      <div class="relative px-6 lg:px-8 pb-8 -mt-26 xl:-mt-28">
         <!-- Profile Picture and Info -->
         <div
           class="flex flex-col lg:flex-row lg:items-end space-y-6 lg:space-y-0 lg:space-x-8 "
@@ -189,33 +197,25 @@ import {
               <div class="flex flex-wrap items-start justify-center mb-6">
                 <div class="flex-1">
                   <h1
-                    class="text-4xl md:text-5xl font-bold text-gray-900 lg:text-white leading-tight whitespace-nowrap"
+                    class="text-4xl md:text-5xl font-bold text-gray-900 lg:text-white leading-tight whitespace-nowrap visible-white-text"
                   >
                     {{ getUserFullName() }}
                   </h1>
                   
                   <!-- Job Title and Company -->
-                  <div class="mt-0">
+                  <div class="text-gray-800 lg:text-white leading-tight whitespace-nowrap lg:visible-white-text mt-1">
                     @if (workStatusStore.hasData()) {
                       <div class="flex items-center space-x-2">
-                        <p class="text-sm xl:text-lg text-gray-600  font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+                        <p class="text-sm lg:text-lg  font-medium whitespace-nowrap overflow-hidden text-ellipsis min-h-6">
                           @if (workStatusStore.jobTitle()) {
                             {{ workStatusStore.jobTitle() }}
-                          } @else {
-                            Working
-                          }
+                          } 
                           @if (workStatusStore.company()) {
-                            <span class="text-gray-500 ps-1 pe-2">at</span>
-                            <span class="text-gray-700">{{ workStatusStore.company() }}</span>
+                            <span class= "ps-1 pe-2">at</span>
+                            <span class="">{{ workStatusStore.company() }}</span>
                           }
                         </p>
-                        <button
-                          (click)="onEditWorkStatus()"
-                          class="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                          title="Edit work status"
-                        >
-                          <lucide-angular [img]="EditIcon" size="16"></lucide-angular>
-                        </button>
+                        
                       </div>
                     } @else {
                       <div class="flex items-center space-x-2">
@@ -235,15 +235,15 @@ import {
                 </div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center space-x-3 ml-6 mt-4">
+                <div class="flex items-center space-x-2 mt-1 lg:mt-4">
                   <button
-                    class="flex items-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                    class="flex items-center space-x-2 px-3 py-1.5 border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
                   >
                     <lucide-angular [img]="EyeIcon" size="16"></lucide-angular>
                     <span class="font-medium">{{ profileStats().views }}</span>
                   </button>
                   <button
-                    class="flex items-center space-x-2 px-4 py-2.5 border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                    class="flex items-center space-x-2 px-3 py-1.5 border border-gray-300 text-gray-800 bg-gray-100 hover:bg-gray-50 rounded-lg transition-all duration-200"
                   >
                     <lucide-angular
                       [img]="Share2Icon"
@@ -252,7 +252,7 @@ import {
                     <span class="font-medium">Share</span>
                   </button>
                   <button
-                    class="px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-semibold shadow-lg whitespace-nowrap"
+                    class="px-4 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-semibold shadow-lg whitespace-nowrap"
                     (click)="onEditProfile()"
                   >
                     Edit Profile
@@ -260,23 +260,13 @@ import {
                 </div>
               </div>
 
-              <!-- Stats Section -->
-              <div class="flex flex-wrap items-center gap-x-8 gap-y-3 mt-auto">
+              <div class="relative flex flex-wrap items-center gap-x-8 gap-y-3 mb-2 pt-0 xl:pt-3">
                 <!-- Work Status Badges -->
                 @if (workStatusStore.hasData()) {
                   @if (workStatusStore.isHiring()) {
-                    <div class="flex items-center space-x-2">
-                      <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <div class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         <lucide-angular [img]="UsersIcon" size="12" class="mr-1"></lucide-angular>
                         Hiring
-                      </div>
-                      <button
-                        (click)="onEditWorkStatus()"
-                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Edit work status"
-                      >
-                        <lucide-angular [img]="EditIcon" size="12"></lucide-angular>
-                      </button>
                     </div>
                   }
                   @if (workStatusStore.isOpenToWork()) {
@@ -285,13 +275,7 @@ import {
                         <lucide-angular [img]="BriefcaseIcon" size="12" class="mr-1"></lucide-angular>
                         Open to work
                       </div>
-                      <button
-                        (click)="onEditWorkStatus()"
-                        class="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Edit work status"
-                      >
-                        <lucide-angular [img]="EditIcon" size="12"></lucide-angular>
-                      </button>
+                      
                     </div>
                   }
                   @if (!workStatusStore.isHiring() && !workStatusStore.isOpenToWork()) {
@@ -320,14 +304,25 @@ import {
                     </button>
                   </div>
                 }
-                
+
                 <!-- Status Message (if exists) -->
                 @if (workStatusStore.workStatusMessage()) {
-                  <div class="flex items-center space-x-2 text-sm text-gray-600 italic max-w-sm">
-                    <lucide-angular [img]="EditIcon" size="14" class="text-gray-400"></lucide-angular>
-                    <span>"{{ workStatusStore.workStatusMessage() }}"</span>
+                  <div class="whitespace-nowrap w-[350px] lg:flex-1 overflow-hidden text-ellipsis text-sm text-gray-600 italic me-4">
+                    "{{ workStatusStore.workStatusMessage() }}"
                   </div>
                 }
+
+                <button
+                    (click)="onEditWorkStatus()"
+                    class="p-1 text-gray-500 hover:text-gray-700 transition-colors absolute top-2 right-1"
+                    title="Edit work status"
+                  >
+                  <lucide-angular [img]="Edit3Icon" size="16"></lucide-angular>
+                </button>
+              </div>  
+
+              <!-- Stats Section -->
+              <div class="flex flex-wrap items-center gap-x-8 gap-y-3 mt-auto">
 
                 <!-- Location -->
                 <div class="flex items-center space-x-2">

@@ -57,6 +57,10 @@ export const routes: Routes = [
         loadComponent: () => import('./test-work-status.component').then(m => m.TestWorkStatusComponent)
       },
       {
+        path: 'test-user-skills',
+        loadComponent: () => import('./test-user-skills.component').then(m => m.TestUserSkillsComponent)
+      },
+      {
         path: 'messages',
         loadComponent: () => import('./features/messages.component').then(m => m.MessagesComponent)
       },

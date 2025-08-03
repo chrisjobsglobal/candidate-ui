@@ -2,14 +2,16 @@ import {
   Component,
   signal,
   inject,
+  effect,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UserStore } from '../store/user.store';
-import { ConfigService } from '../../../core/services/config.service';
-import { ProfileHeaderComponent } from './profile-header.components';
+import { UserSkill } from '../../../core/models/user.model';
+import { ProfileHeaderComponent } from './profile-header.component';
 import { EditProfileBioComponent } from './edit-profile-bio.component';
+import { ProfileSkillsComponent } from './profile-skills.component';
 import {
   LucideAngularModule,
   Edit3,
@@ -57,7 +59,7 @@ interface Skill {
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, ProfileHeaderComponent, EditProfileBioComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ProfileHeaderComponent, EditProfileBioComponent, ProfileSkillsComponent],
   template: `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       <!-- Profile Header -->
@@ -231,45 +233,12 @@ interface Skill {
         <!-- Right Column -->
         <div class="space-y-8">
           <!-- Skills -->
-          <div class="bg-white rounded-xl p-6 shadow-elegant">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-semibold text-text-primary">Skills</h2>
-              <button
-                class="p-2 text-text-secondary hover:text-text-primary transition-colors"
-              >
-                <lucide-angular [img]="PlusIcon" size="16"></lucide-angular>
-              </button>
-            </div>
-            <div class="space-y-4">
-              <div *ngFor="let skill of skills()" class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-medium text-text-primary">{{
-                    skill.name
-                  }}</span>
-                  <div class="flex items-center space-x-2">
-                    <div class="flex items-center space-x-1">
-                      <lucide-angular
-                        *ngFor="let star of [1, 2, 3, 4, 5]"
-                        [img]="StarIcon"
-                        size="14"
-                        [class.text-yellow-500]="star <= skill.level"
-                        [class.text-background-subtle]="star > skill.level"
-                      ></lucide-angular>
-                    </div>
-                    <span class="text-sm text-text-secondary">{{
-                      skill.endorsed
-                    }}</span>
-                  </div>
-                </div>
-                <div class="w-full bg-background-subtle rounded-full h-2">
-                  <div
-                    class="bg-primary-900 h-2 rounded-full"
-                    [style.width.%]="skill.level * 20"
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <app-profile-skills
+            [demoSkills]="skills()"
+            (addSkill)="onAddSkill()"
+            (editSkill)="onEditSkill($event)"
+            (deleteSkill)="onDeleteSkill($event)"
+          ></app-profile-skills>
 
           <!-- Languages -->
           <div class="bg-white rounded-xl p-6 shadow-elegant">
@@ -367,7 +336,6 @@ interface Skill {
 })
 export class ProfileComponent {
   private readonly userStore = inject(UserStore);
-  private readonly configService = inject(ConfigService);
   private readonly router = inject(Router);
 
   readonly Edit3Icon = Edit3;
@@ -403,20 +371,6 @@ export class ProfileComponent {
   constructor() {
     // Load current user profile on component initialization
     this.loadUserProfile();
-
-    // Debug: Log current user changes
-    setTimeout(() => {
-      console.log('Current user in profile component:', this.currentUser());
-      console.log('Profile picture URL:', this.currentUser()?.avatar_url);
-      console.log(
-        'Config service - API Base URL:',
-        this.configService.getApiBaseUrl()
-      );
-      console.log(
-        'Config service - Uploads Base URL:',
-        this.configService.getUploadsBaseUrl()
-      );
-    }, 1000);
   }
 
   /**
@@ -444,6 +398,35 @@ export class ProfileComponent {
     console.log('Bio updated:', newBio);
     // The user store will automatically update the current user signal
     // when the bio is successfully updated via the API
+  }
+
+  /**
+   * Handle add skill event from skills component
+   */
+  onAddSkill(): void {
+    // For now, navigate to a skill management page or open a modal
+    // In the future, this could open an inline form or modal
+    console.log('Add skill requested');
+    // You could navigate to a dedicated skills management page
+    // this.router.navigate(['/app/profile/skills/add']);
+  }
+
+  /**
+   * Handle edit skill event from skills component
+   */
+  onEditSkill(skill: UserSkill): void {
+    console.log('Edit skill requested:', skill);
+    // You could navigate to an edit page or open a modal
+    // this.router.navigate(['/app/profile/skills/edit', skill.id]);
+  }
+
+  /**
+   * Handle delete skill event from skills component
+   */
+  onDeleteSkill(skillId: number): void {
+    console.log('Delete skill requested:', skillId);
+    // The actual deletion is handled in the skills component
+    // This method is here for any additional logic if needed
   }
 
   /**

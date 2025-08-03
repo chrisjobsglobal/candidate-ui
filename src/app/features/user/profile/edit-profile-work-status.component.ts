@@ -196,7 +196,7 @@ import {
                 type="text"
                 id="job_title"
                 formControlName="job_title"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="e.g., Senior Software Engineer"
                 maxlength="100"
               />
@@ -212,7 +212,7 @@ import {
                 type="text"
                 id="company"
                 formControlName="company"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="e.g., Tech Solutions Inc."
                 maxlength="100"
               />
@@ -236,16 +236,16 @@ import {
               id="work_status_message"
               formControlName="work_status_message"
               rows="4"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all resize-none"
               placeholder="Share more details about your current work status, what you're looking for, or what positions you're hiring for..."
-              maxlength="500"
+              maxlength="100"
             ></textarea>
             <div class="mt-2 flex justify-between items-center">
               <p class="text-sm text-gray-500">
                 This message will be visible to others on your profile
               </p>
               <span class="text-sm text-gray-400">
-                {{ (workStatusForm.get('work_status_message')?.value || '').length }}/500
+                {{ (workStatusForm.get('work_status_message')?.value || '').length }}/100
               </span>
             </div>
           </div>

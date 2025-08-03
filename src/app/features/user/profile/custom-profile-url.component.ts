@@ -63,7 +63,7 @@ import {
               (input)="checkProfileTagAvailability()"
               type="text"
               placeholder="e.g., marian-smith"
-              class="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+              class="w-full px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
               [class.border-red-300]="profileTagAvailable() === false"
               [class.border-green-300]="profileTagAvailable() === true"
             />

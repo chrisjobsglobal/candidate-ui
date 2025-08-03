@@ -91,6 +91,14 @@ export interface Language {
   proficiency: 'beginner' | 'intermediate' | 'advanced' | 'native';
 }
 
+export interface UserSkill {
+  id: number;
+  skill_name: string;
+  rating: number;
+  user_id: string;
+  stars: number;
+}
+
 export interface Connection {
   id: string;
   userId: string;

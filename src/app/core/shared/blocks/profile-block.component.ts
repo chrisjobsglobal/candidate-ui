@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
-import { LogOut, LucideAngularModule, Settings } from 'lucide-angular';
+import { DoorOpen, LogOut, LucideAngularModule, Settings } from 'lucide-angular';
 import { AuthStore } from '../../../features/auth/auth.store';
 import { UserStore } from '../../../features/user/store/user.store';
 import { User as UserModel } from '../../models/user.model';
@@ -83,9 +83,9 @@ import { User as UserModel } from '../../models/user.model';
       <div class="p-2">
         <button
           (click)="logout()"
-          class="w-full mt-2 flex items-center justify-center space-x-2 px-3 py-2 text-sm bg-gray-50 text-red-500 hover:bg-gray-100 hover:text-red-700 rounded-lg transition-colors"
+          class="w-full mt-2 flex items-center justify-center space-x-2 px-3 py-2 text-sm bg-gray-50 text-primary-400 hover:bg-gray-100 hover:text-primary-600 rounded-lg transition-colors"
         >
-          <lucide-angular [img]="LogOutIcon" size="16"></lucide-angular>
+          <lucide-angular [img]="DoorOpenIcon" size="16"></lucide-angular>
           <span>Sign Out</span>
         </button>
       </div>
@@ -95,6 +95,7 @@ import { User as UserModel } from '../../models/user.model';
 export class ProfileBlockComponent {
   readonly SettingsIcon = Settings;
   readonly LogOutIcon = LogOut;
+  readonly DoorOpenIcon = DoorOpen;
 
   readonly router = inject(Router);
   readonly authStore = inject(AuthStore);

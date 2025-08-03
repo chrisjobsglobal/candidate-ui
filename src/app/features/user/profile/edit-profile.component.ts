@@ -101,7 +101,7 @@ import {
                 type="text"
                 id="first_name"
                 formControlName="first_name"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="Enter your first name"
               />
               <div *ngIf="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched" 
@@ -119,7 +119,7 @@ import {
                 type="text"
                 id="last_name"
                 formControlName="last_name"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="Enter your last name"
               />
               <div *ngIf="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched" 
@@ -137,7 +137,7 @@ import {
                 type="text"
                 id="profile_tag"
                 formControlName="profile_tag"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="e.g., @johndoe"
                 maxlength="50"
               />
@@ -163,7 +163,7 @@ import {
                 type="tel"
                 id="mobile"
                 formControlName="mobile"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                 placeholder="+1 (555) 123-4567"
               />
             </div>
@@ -176,7 +176,7 @@ import {
               <select
                 id="country"
                 formControlName="country"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors bg-white"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all bg-white"
               >
                 <option value="">Select a country</option>
                 <option *ngFor="let country of countries()" [value]="country.value">
@@ -199,7 +199,7 @@ import {
                 id="address"
                 formControlName="address"
                 rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all resize-none"
                 placeholder="Enter your full address"
               ></textarea>
             </div>
@@ -221,7 +221,7 @@ import {
               id="bio"
               formControlName="bio"
               rows="5"
-              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all resize-none"
               placeholder="Tell us about yourself, your experience, and what you're looking for..."
               maxlength="500"
             ></textarea>
