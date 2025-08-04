@@ -1,7 +1,9 @@
-import { Component, inject, signal, Input, Output, EventEmitter } from '@angular/core';
+import { Component, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { UserSkillsStore, CreateUserSkillDto } from '../store/user-skills.store';
+import { UserSkillsStore, CreateUserSkillDto, UpdateUserSkillDto } from '../store/user-skills.store';
 import { UserSkill } from '../../../core/models/user.model';
+import { SkillModalComponent } from './skill-modal.component';
+import { DeleteSkillModalComponent } from './delete-skill-modal.component';
 import {
   LucideAngularModule,
   Plus,
@@ -10,18 +12,12 @@ import {
   Trash2,
 } from 'lucide-angular';
 
-interface Skill {
-  name: string;
-  level: number; // 1-5
-  endorsed: number;
-}
-
 @Component({
   selector: 'app-profile-skills',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, SkillModalComponent, DeleteSkillModalComponent],
   template: `
-    <div class="bg-white rounded-xl p-6 shadow-elegant">
+    <div class="bg-white rounded-xl p-6 shadow-elegant mb-8">
       <div class="flex items-center justify-between mb-6">
         <h2 class="text-xl font-semibold text-text-primary">Skills</h2>
         <button
@@ -39,6 +35,20 @@ interface Skill {
         <p class="text-text-secondary text-sm">Loading skills...</p>
       </div>
 
+      <!-- Success/Error Messages -->
+      <div
+        *ngIf="message()"
+        class="mb-4 p-3 rounded-lg border"
+        [class.bg-green-50]="message()!.type === 'success'"
+        [class.border-green-200]="message()!.type === 'success'"
+        [class.text-green-800]="message()!.type === 'success'"
+        [class.bg-red-50]="message()!.type === 'error'"
+        [class.border-red-200]="message()!.type === 'error'"
+        [class.text-red-800]="message()!.type === 'error'"
+      >
+        <p class="text-sm font-medium">{{ message()!.message }}</p>
+      </div>
+
       <!-- Error State -->
       <div *ngIf="skillsStore.error()" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
         <p class="text-red-800 text-sm">{{ skillsStore.error() }}</p>
@@ -53,14 +63,19 @@ interface Skill {
             <div class="flex items-center space-x-2">
               <!-- Stars based on API stars field -->
               <div class="flex items-center space-x-1">
-                <lucide-angular
+                <span 
                   *ngFor="let star of [1, 2, 3, 4, 5]"
-                  [img]="StarIcon"
-                  size="14"
-                  [class.text-yellow-500]="star <= skill.stars"
-                  [class.text-background-subtle]="star > skill.stars"
-                ></lucide-angular>
+                  class="text-sm"
+                  [ngClass]="{
+                    'text-yellow-400': star <= skill.stars,
+                    'text-gray-300': star > skill.stars
+                  }"
+                >
+                  {{ star <= skill.stars ? '★' : '☆' }}
+                </span>
               </div>
+              <!-- Rating display -->
+              <span class="text-sm text-text-secondary">{{ skill.rating }}/50</span>
               <!-- Action buttons (shown on hover) -->
               <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
@@ -71,7 +86,7 @@ interface Skill {
                   <lucide-angular [img]="EditIcon" size="12"></lucide-angular>
                 </button>
                 <button
-                  (click)="onDeleteSkill(skill.id)"
+                  (click)="onDeleteSkill(skill)"
                   [disabled]="skillsStore.loading().delete"
                   class="p-1 text-text-secondary hover:text-red-600 transition-colors disabled:opacity-50"
                   title="Delete skill"
@@ -81,44 +96,21 @@ interface Skill {
               </div>
             </div>
           </div>
-          <!-- Progress bar based on rating -->
+          <!-- Progress bar based on rating (max 50) -->
           <div class="w-full bg-background-subtle rounded-full h-2">
             <div
               class="bg-primary-900 h-2 rounded-full transition-all"
-              [style.width.%]="skill.rating"
+              [style.width.%]="(skill.rating / 50) * 100"
+              [title]="'Rating: ' + skill.rating + '/50'"
             ></div>
           </div>
         </div>
 
         <!-- Fallback to demo skills if no API skills -->
-        <div *ngIf="skillsStore.items().length === 0 && demoSkills && demoSkills.length > 0">
-          <div *ngFor="let skill of demoSkills" class="space-y-2">
-            <div class="flex items-center justify-between">
-              <span class="font-medium text-text-primary">{{ skill.name }}</span>
-              <div class="flex items-center space-x-2">
-                <div class="flex items-center space-x-1">
-                  <lucide-angular
-                    *ngFor="let star of [1, 2, 3, 4, 5]"
-                    [img]="StarIcon"
-                    size="14"
-                    [class.text-yellow-500]="star <= skill.level"
-                    [class.text-background-subtle]="star > skill.level"
-                  ></lucide-angular>
-                </div>
-                <span class="text-sm text-text-secondary">{{ skill.endorsed }}</span>
-              </div>
-            </div>
-            <div class="w-full bg-background-subtle rounded-full h-2">
-              <div
-                class="bg-primary-900 h-2 rounded-full"
-                [style.width.%]="skill.level * 20"
-              ></div>
-            </div>
-          </div>
-        </div>
+        <!-- DEMO SKILLS REMOVED - Using only API skills now -->
 
         <!-- Empty State -->
-        <div *ngIf="skillsStore.items().length === 0 && (!demoSkills || demoSkills.length === 0)" 
+        <div *ngIf="skillsStore.items().length === 0" 
              class="text-center py-8">
           <lucide-angular [img]="StarIcon" size="32" class="mx-auto text-background-subtle mb-3"></lucide-angular>
           <h3 class="text-text-primary font-medium mb-1">No skills yet</h3>
@@ -132,16 +124,41 @@ interface Skill {
           </button>
         </div>
       </div>
+
+      <!-- Skill Modal -->
+      <app-skill-modal
+        [isOpen]="isSkillModalOpen()"
+        [skill]="selectedSkill()"
+        [isSubmitting]="skillsStore.loading().create || skillsStore.loading().update"
+        (close)="onCloseSkillModal()"
+        (save)="onSaveSkill($event)"
+      ></app-skill-modal>
+
+      <!-- Delete Skill Modal -->
+      <app-delete-skill-modal
+        #deleteSkillModal
+        [skill]="skillToDelete()"
+        (close)="onCloseDeleteModal()"
+        (deleted)="onSkillDeleted($event)"
+      ></app-delete-skill-modal>
     </div>
   `,
 })
-export class ProfileSkillsComponent {
-  @Input() demoSkills?: Skill[];
-  @Output() addSkill = new EventEmitter<void>();
-  @Output() editSkill = new EventEmitter<UserSkill>();
-  @Output() deleteSkill = new EventEmitter<number>();
-
+export class ProfileSkillsComponent implements OnInit {
   readonly skillsStore = inject(UserSkillsStore);
+
+  @ViewChild('deleteSkillModal') deleteSkillModal!: DeleteSkillModalComponent;
+
+  // Modal state
+  readonly isSkillModalOpen = signal(false);
+  readonly selectedSkill = signal<UserSkill | null>(null);
+  readonly skillToDelete = signal<UserSkill | null>(null);
+
+  // Success/error message state
+  readonly message = signal<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   // Lucide icons
   readonly PlusIcon = Plus;
@@ -150,47 +167,105 @@ export class ProfileSkillsComponent {
   readonly Trash2Icon = Trash2;
 
   constructor() {
-    // Load skills when component initializes
-    this.loadSkills();
+    // Skills will be loaded in ngOnInit following the job store pattern
   }
 
-  private loadSkills(): void {
+  ngOnInit(): void {
+    // Load skills when component initializes - following job store pattern
     this.skillsStore.loadItems().subscribe({
       next: (result) => {
-        console.log('Skills loaded in profile component:', result);
+        this.skillsStore.items().forEach(skill => {
+          console.log(`Skill: ${skill.skill_name}, Stars: ${skill.stars}, Rating: ${skill.rating}`);
+        });
       },
       error: (error) => {
-        console.error('Failed to load skills in profile component:', error);
-        // If it's an auth error, you might want to redirect to login
-        if (error.status === 401) {
-          console.warn('Authentication required - user may need to log in again');
-        }
+        console.error('Failed to load skills:', error);
+        // Error handling is managed by the store's error signal
       }
     });
   }
 
   onAddSkill(): void {
-    this.addSkill.emit();
+    this.selectedSkill.set(null);
+    this.isSkillModalOpen.set(true);
   }
 
   onEditSkill(skill: UserSkill): void {
-    this.editSkill.emit(skill);
+    this.selectedSkill.set(skill);
+    this.isSkillModalOpen.set(true);
   }
 
-  onDeleteSkill(skillId: number): void {
-    if (confirm('Are you sure you want to delete this skill?')) {
-      this.skillsStore.deleteItem(skillId).subscribe({
-        next: () => {
-          console.log('Skill deleted successfully');
+  onDeleteSkill(skill: UserSkill): void {
+    this.skillToDelete.set(skill);
+    this.deleteSkillModal.show();
+  }
+
+  onCloseDeleteModal(): void {
+    this.skillToDelete.set(null);
+  }
+
+  onSkillDeleted(deletedSkill: UserSkill): void {
+    console.log('Skill deleted successfully:', deletedSkill);
+    this.showSuccessMessage('Skill deleted successfully!');
+    this.skillToDelete.set(null);
+  }
+
+  refreshSkills(): void {
+    this.skillsStore.refresh().subscribe();
+  }
+
+  // Modal-related methods
+
+  onCloseSkillModal(): void {
+    this.isSkillModalOpen.set(false);
+    this.selectedSkill.set(null);
+  }
+
+  onSaveSkill(skillData: CreateUserSkillDto | UpdateUserSkillDto): void {
+    const selectedSkill = this.selectedSkill();
+    
+    if (selectedSkill) {
+      // Update existing skill
+      this.skillsStore.updateItemById(selectedSkill.id, skillData as UpdateUserSkillDto).subscribe({
+        next: (updatedSkill: UserSkill) => {
+          console.log('Skill updated successfully:', updatedSkill);
+          this.onCloseSkillModal();
+          this.showSuccessMessage('Skill updated successfully!');
         },
-        error: (error) => {
-          console.error('Failed to delete skill:', error);
+        error: (error: any) => {
+          console.error('Failed to update skill:', error);
+          this.showErrorMessage('Failed to update skill. Please try again.');
+        }
+      });
+    } else {
+      // Create new skill
+      this.skillsStore.createItem(skillData as CreateUserSkillDto).subscribe({
+        next: (newSkill: UserSkill) => {
+          console.log('Skill created successfully:', newSkill);
+          this.onCloseSkillModal();
+          this.showSuccessMessage('Skill added successfully!');
+        },
+        error: (error: any) => {
+          console.error('Failed to create skill:', error);
+          this.showErrorMessage('Failed to add skill. Please try again.');
         }
       });
     }
   }
 
-  refreshSkills(): void {
-    this.skillsStore.refresh().subscribe();
+  private showSuccessMessage(message: string): void {
+    this.message.set({ type: 'success', message });
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      this.message.set(null);
+    }, 5000);
+  }
+
+  private showErrorMessage(message: string): void {
+    this.message.set({ type: 'error', message });
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      this.message.set(null);
+    }, 5000);
   }
 }

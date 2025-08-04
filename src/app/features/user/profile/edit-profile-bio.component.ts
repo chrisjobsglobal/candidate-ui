@@ -6,6 +6,7 @@ import {
   signal,
   inject,
   effect,
+  computed,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,7 +28,7 @@ import {
       <!-- Display Mode -->
       <div *ngIf="!isEditing()" class="flex items-start justify-between group">
         <p 
-          class="text-text-secondary leading-relaxed flex-1 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+          class="text-text-secondary leading-relaxed flex-1 cursor-pointer hover:bg-gray-50 p-3 rounded-lg transition-colors"
           [class.text-gray-400]="!currentBio() || currentBio().trim() === ''"
           (click)="startEditing()"
         >
@@ -149,19 +150,26 @@ export class EditProfileBioComponent {
   readonly isSaving = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly showSuccessMessage = signal(false);
-  readonly currentBio = signal(this.bio);
-  readonly originalBio = signal(this.bio);
+  
+  // Computed signal that always shows the most current bio value
+  readonly currentBio = computed(() => {
+    const currentUser = this.userStore.currentUser();
+    // Prefer the bio from the store, fall back to input prop
+    return currentUser?.bio !== undefined ? currentUser.bio : (this.bio || '');
+  });
+  
+  readonly originalBio = signal('');
 
   // Editing state
   editingBio: string = '';
 
   constructor() {
-    // Update current bio when input changes
+    // Single effect to handle bio updates
     effect(() => {
-      this.currentBio.set(this.bio);
-      this.originalBio.set(this.bio);
+      const bioValue = this.currentBio();
+      this.originalBio.set(bioValue);
       if (!this.isEditing()) {
-        this.editingBio = this.bio;
+        this.editingBio = bioValue;
       }
     });
   }
@@ -171,8 +179,10 @@ export class EditProfileBioComponent {
    */
   startEditing(): void {
     this.isEditing.set(true);
-    this.editingBio = this.currentBio();
-    this.originalBio.set(this.currentBio());
+    // Use the current bio from the computed signal
+    const bioToEdit = this.currentBio();
+    this.editingBio = bioToEdit;
+    this.originalBio.set(bioToEdit);
     this.errorMessage.set(null);
     this.showSuccessMessage.set(false);
 
@@ -192,7 +202,9 @@ export class EditProfileBioComponent {
    */
   cancelEditing(): void {
     this.isEditing.set(false);
-    this.editingBio = this.originalBio();
+    // Use the current bio from the computed signal
+    const bioToRevert = this.currentBio();
+    this.editingBio = bioToRevert;
     this.errorMessage.set(null);
   }
 
@@ -219,8 +231,7 @@ export class EditProfileBioComponent {
     // Update bio via user store
     this.userStore.updateCurrentUserProfile({ bio: trimmedBio }).subscribe({
       next: (updatedUser) => {
-        // Update local state
-        this.currentBio.set(updatedUser.bio);
+        // Update local state - the computed signal will automatically update
         this.originalBio.set(updatedUser.bio);
         this.isEditing.set(false);
         this.isSaving.set(false);

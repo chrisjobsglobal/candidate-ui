@@ -66,6 +66,36 @@ export interface Experience {
   description: string;
 }
 
+/**
+ * User Experience interface matching the API response format
+ */
+export interface UserExperience {
+  id: number;
+  title: string;
+  company: string;
+  location: string;
+  start_date: string; // ISO date string
+  end_date: string | null;
+  is_current: boolean;
+  description: string;
+  user_id: string;
+}
+
+/**
+ * User Education interface matching the API response format
+ */
+export interface UserEducation {
+  id: number;
+  institution: string;
+  degree: string;
+  field_of_study: string;
+  start_date: string; // ISO date string
+  end_date: string | null;
+  grade: string | null;
+  description: string | null;
+  user_id: string;
+}
+
 export interface Education {
   id: string;
   institution: string;
@@ -89,6 +119,16 @@ export interface Certification {
 export interface Language {
   name: string;
   proficiency: 'beginner' | 'intermediate' | 'advanced' | 'native';
+}
+
+/**
+ * User Language interface matching the API response format
+ */
+export interface UserLanguage {
+  id: number;
+  name: string;
+  proficiency: 'beginner' | 'intermediate' | 'advanced' | 'native';
+  user_id: string;
 }
 
 export interface UserSkill {

@@ -1,8 +1,8 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, finalize } from 'rxjs';
-import { BaseStore } from '../../core/store/base-store';
-import { JobListing, JobFilter, CreateJobDto, UpdateJobDto, JobService } from './services/job.service';
+import { BaseStore, CrudOperations } from '../../core/store/base-store';
+import { JobListing, JobFilter, CreateJobDto, UpdateJobDto } from './services/job.service';
 
 /**
  * Job store implementation using the base store with HTTP calls
@@ -11,8 +11,6 @@ import { JobListing, JobFilter, CreateJobDto, UpdateJobDto, JobService } from '.
   providedIn: 'root'
 })
 export class JobStore extends BaseStore<JobListing, CreateJobDto, UpdateJobDto, JobFilter> {
-  
-  private jobService = inject(JobService);
   
   constructor() {
     const http = inject(HttpClient);
@@ -23,9 +21,9 @@ export class JobStore extends BaseStore<JobListing, CreateJobDto, UpdateJobDto, 
     });
   }
 
-  protected getService(): JobService {
-    // This method is now deprecated but kept for backward compatibility
-    return this.jobService;
+  protected getService(): CrudOperations<JobListing, CreateJobDto, UpdateJobDto, JobFilter> {
+    // This method is deprecated - BaseStore handles HTTP operations directly
+    throw new Error('getService is deprecated - use BaseStore HTTP operations directly');
   }
 
   protected getItemId(job: JobListing): string {
@@ -63,20 +61,6 @@ export class JobStore extends BaseStore<JobListing, CreateJobDto, UpdateJobDto, 
 
   readonly remoteJobs = computed(() => 
     this.items().filter(job => job.type === 'remote' || job.location.toLowerCase().includes('remote'))
-  );
-
-  readonly highSalaryJobs = computed(() => 
-    this.items().filter(job => {
-      // Simple check for high salary - in real app, parse salary properly
-      return job.salary.includes('$120,000') || job.salary.includes('$130,000') || job.salary.includes('$150,000') || job.salary.includes('$180,000');
-    })
-  );
-
-  readonly recentJobs = computed(() => 
-    this.items().filter(job => {
-      // Simple check for recent jobs - in real app, parse dates properly
-      return job.postedTime.includes('day') || job.postedTime.includes('hour') || job.postedTime.includes('Just now');
-    })
   );
 
   readonly jobsByCompany = computed(() => {
@@ -164,11 +148,11 @@ export class JobStore extends BaseStore<JobListing, CreateJobDto, UpdateJobDto, 
    * Toggle bookmark status for a job
    */
   toggleBookmark(jobId: string): Observable<JobListing> {
-    // Use the service method for bookmarking
+    // Use direct HTTP call instead of service
     this.setLoading('update', true);
     this.clearError();
 
-    return this.jobService.toggleBookmark(jobId).pipe(
+    return this.http.patch<JobListing>(`${this.baseUrl}/${jobId}/bookmark`, {}).pipe(
       tap(updatedJob => {
         this.updateItem(updatedJob);
         if (this.currentItem()?.id === jobId) {
